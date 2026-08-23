@@ -1,3 +1,6 @@
+import { verifyEvent, type Event } from "nostr-tools/pure"
+import { normalizeUrl } from "./normalize"
+
 export const KIND_COMMENT = 1111
 export const K_WEB = "web"
 
@@ -53,5 +56,60 @@ export function buildReply(
       ["k", "1111"],
       ["p", parent.pubkey, ""],
     ],
+  }
+}
+
+export type VerifiedComment = {
+  id: string
+  pubkey: string
+  kind: 1111
+  created_at: number
+  content: string
+  tags: string[][]
+  sig: string
+  parentId?: string
+}
+
+function pointerMatchesRoom(value: string, roomUrl: string): boolean {
+  try {
+    return normalizeUrl(value) === roomUrl
+  } catch {
+    return value === roomUrl
+  }
+}
+
+export function parseComment(event: Event, roomUrl: string): VerifiedComment | null {
+  const candidate: Event = {
+    id: event.id,
+    pubkey: event.pubkey,
+    created_at: event.created_at,
+    kind: event.kind,
+    tags: event.tags,
+    content: event.content,
+    sig: event.sig,
+  }
+  if (!verifyEvent(candidate)) return null
+  if (candidate.kind !== KIND_COMMENT) return null
+
+  const pointers = event.tags
+    .filter((tag) => (tag[0] === "I" || tag[0] === "i") && tag[1])
+    .map((tag) => tag[1])
+  if (!pointers.some((value) => pointerMatchesRoom(value, roomUrl))) return null
+
+  const hasWeb = event.tags.some((tag) => (tag[0] === "K" || tag[0] === "k") && tag[1] === K_WEB)
+  if (!hasWeb) return null
+
+  const eTags = event.tags.filter((tag) => tag[0] === "e" && tag[1])
+  const isReply = eTags.length > 0 && event.tags.some((tag) => tag[0] === "k" && tag[1] === "1111")
+
+  return {
+    id: event.id,
+    pubkey: event.pubkey,
+    kind: KIND_COMMENT,
+    created_at: event.created_at,
+    content: event.content,
+    tags: event.tags,
+    sig: event.sig,
+    parentId: isReply ? eTags[0][1] : undefined,
   }
 }
