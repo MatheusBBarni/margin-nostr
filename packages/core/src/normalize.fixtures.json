@@ -1,0 +1,6 @@
+[
+  {
+    "in": "http://www.Example.com/a//b/?utm_source=x&id=1#c",
+    "out": "https://example.com/a/b?id=1"
+  }
+]
