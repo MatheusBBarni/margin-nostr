@@ -44,3 +44,32 @@ export function nest(comments: VerifiedComment[]): { roots: ThreadNode[]; orphan
 
   return { roots, orphans }
 }
+
+export type FilterMode = "follows" | "everyone"
+
+export type FilterOptions = {
+  mode: FilterMode
+  follows: Set<string>
+  muted: Set<string>
+  self?: string
+}
+
+function dropMuted(nodes: ThreadNode[], muted: Set<string>): ThreadNode[] {
+  return nodes.flatMap((node) => {
+    if (muted.has(node.comment.pubkey)) return []
+    return [{ ...node, children: dropMuted(node.children, muted) }]
+  })
+}
+
+function subtreeHasFollow(node: ThreadNode, allowed: Set<string>): boolean {
+  if (allowed.has(node.comment.pubkey)) return true
+  return node.children.some((child) => subtreeHasFollow(child, allowed))
+}
+
+export function applyFilter(nodes: ThreadNode[], options: FilterOptions): ThreadNode[] {
+  const visible = dropMuted(nodes, options.muted)
+  if (options.mode === "everyone") return visible
+  const allowed = new Set(options.follows)
+  if (options.self) allowed.add(options.self)
+  return visible.filter((node) => subtreeHasFollow(node, allowed))
+}
