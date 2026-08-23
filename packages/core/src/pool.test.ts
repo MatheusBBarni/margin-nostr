@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import { finalizeEvent, generateSecretKey } from "nostr-tools/pure"
 import { KIND_COMMENT } from "./events"
-import { subscribeRoom, type PoolLike } from "./pool"
+import { publishRoom, subscribeRoom, type PoolLike } from "./pool"
 
 const ROOM = "https://example.com/x"
 const sk = generateSecretKey()
@@ -65,5 +65,27 @@ describe("subscribeRoom", () => {
       { kinds: [1111], "#i": [ROOM], limit: 200 },
     ])
     expect(closed).toBe(true)
+  })
+
+  test("publishRoom reports per-relay ok and failed", async () => {
+    const signed = sign([
+      ["I", ROOM],
+      ["K", "web"],
+      ["i", ROOM],
+      ["k", "web"],
+    ])
+    const pool: PoolLike = {
+      subscribeMany() {
+        return { close() {} }
+      },
+      publish(relays) {
+        return relays.map((relay) =>
+          relay.includes("ok") ? Promise.resolve() : Promise.reject(new Error("no")),
+        )
+      },
+    }
+    const result = await publishRoom(pool, ["wss://ok.example", "wss://bad.example"], signed)
+    expect(result.ok).toEqual(["wss://ok.example"])
+    expect(result.failed).toEqual(["wss://bad.example"])
   })
 })
