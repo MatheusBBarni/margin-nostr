@@ -2,6 +2,7 @@
   "name": "margin",
   "private": true,
   "workspaces": ["packages/*"],
+  "packageManager": "bun@1.3.13",
   "scripts": {
     "test": "bun test packages/core"
   }
