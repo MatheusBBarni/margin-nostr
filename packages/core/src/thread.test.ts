@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import type { VerifiedComment } from "./events"
-import { nest } from "./thread"
+import { applyFilter, nest } from "./thread"
 
 function comment(partial: {
   id: string
@@ -45,5 +45,50 @@ describe("nest", () => {
     expect(ids.size).toBe(200)
     expect(ids.has("n0")).toBe(false)
     expect(ids.has("n200")).toBe(true)
+  })
+})
+
+describe("applyFilter", () => {
+  test("mute drops a subtree; follows keeps a stranger root if a descendant is a follow", () => {
+    const stranger = comment({ id: "stranger", pubkey: "s", created_at: 1 })
+    const followReply = comment({
+      id: "follow-reply",
+      pubkey: "f",
+      created_at: 2,
+      parentId: "stranger",
+    })
+    const muted = comment({ id: "muted", pubkey: "m", created_at: 3 })
+    const mutedChild = comment({
+      id: "muted-child",
+      pubkey: "f",
+      created_at: 4,
+      parentId: "muted",
+    })
+    const { roots } = nest([stranger, followReply, muted, mutedChild])
+
+    const everyone = applyFilter(roots, {
+      mode: "everyone",
+      follows: new Set(["f"]),
+      muted: new Set(["m"]),
+    })
+    expect(everyone.map((node) => node.comment.id)).toEqual(["stranger"])
+    expect(everyone[0]?.children.map((node) => node.comment.id)).toEqual(["follow-reply"])
+
+    const follows = applyFilter(roots, {
+      mode: "follows",
+      follows: new Set(["f"]),
+      muted: new Set(["m"]),
+      self: "me",
+    })
+    expect(follows.map((node) => node.comment.id)).toEqual(["stranger"])
+    expect(follows[0]?.children.map((node) => node.comment.id)).toEqual(["follow-reply"])
+
+    const selfOnly = applyFilter(roots, {
+      mode: "follows",
+      follows: new Set(),
+      muted: new Set(),
+      self: "s",
+    })
+    expect(selfOnly.map((node) => node.comment.id)).toEqual(["stranger"])
   })
 })
