@@ -15,6 +15,7 @@ export type PoolLike = {
     filters: object[],
     opts: { onevent: (event: Event) => void },
   ) => RoomSub
+  publish: (relays: string[], event: Event) => Promise<unknown>[]
 }
 
 export function subscribeRoom(
@@ -39,4 +40,21 @@ export function subscribeRoom(
       },
     },
   )
+}
+
+export async function publishRoom(
+  pool: PoolLike,
+  relays: string[],
+  signed: Event,
+): Promise<{ ok: string[]; failed: string[] }> {
+  const results = await Promise.allSettled(pool.publish(relays, signed))
+  const ok: string[] = []
+  const failed: string[] = []
+  for (const [index, result] of results.entries()) {
+    const relay = relays[index]
+    if (!relay) continue
+    if (result.status === "fulfilled") ok.push(relay)
+    else failed.push(relay)
+  }
+  return { ok, failed }
 }
