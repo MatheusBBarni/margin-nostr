@@ -42,5 +42,21 @@
   {
     "in": "https://example.com/x?b=1&a=2",
     "out": "https://example.com/x?a=2&b=1"
+  },
+  {
+    "in": "https://amp.example.com/article",
+    "out": "https://amp.example.com/article"
+  },
+  {
+    "in": "https://www.theguardian.com/world/amp/2024/jan/01/story",
+    "out": "https://theguardian.com/world/amp/2024/jan/01/story"
+  },
+  {
+    "in": "https://en.wikipedia.org/wiki/Nostr",
+    "out": "https://en.wikipedia.org/wiki/Nostr"
+  },
+  {
+    "in": "https://www.google.com/amp/s/example.com/article",
+    "out": "https://google.com/amp/s/example.com/article"
   }
 ]
