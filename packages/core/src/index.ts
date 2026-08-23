@@ -32,3 +32,19 @@ export {
   type RoomHandlers,
   type RoomSub,
 } from "./pool"
+export {
+  KV_KEYS,
+  type FilterPreference,
+  type Kv,
+  type SignerMethod,
+  type StoredSigner,
+  type ThemePreference,
+} from "./kv"
+export { createNip07Signer } from "./signers/nip07"
+export { createBunkerSigner } from "./signers/bunker"
+export {
+  EXTENSION_SIGNER_IDS,
+  createExtensionMessageSigner,
+  detectExtensionSigner,
+} from "./signers/extension-message"
+export type { ExtensionMessenger, Nip07Nostr, Signer, SignerId } from "./signers/types"
