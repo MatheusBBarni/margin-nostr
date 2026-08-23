@@ -1,0 +1,8 @@
+{
+  "name": "margin",
+  "private": true,
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "test": "bun test packages/core"
+  }
+}
