@@ -3,10 +3,11 @@ import fixtures from "./normalize.fixtures.json"
 import { NormalizeError, normalizeUrl } from "./normalize"
 
 describe("normalizeUrl", () => {
-  test("maps a tracking-heavy URL to the locked room id", () => {
-    const pair = fixtures[0]
-    expect(pair).toBeDefined()
-    expect(normalizeUrl(pair.in)).toBe(pair.out)
+  test("maps each fixture input to the locked room id", () => {
+    expect(fixtures.length).toBeGreaterThan(0)
+    for (const pair of fixtures) {
+      expect(normalizeUrl(pair.in)).toBe(pair.out)
+    }
   })
 
   test("rejects non-http(s) and unparseable input", () => {

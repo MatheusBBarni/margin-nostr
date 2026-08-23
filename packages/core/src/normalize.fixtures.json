@@ -2,5 +2,29 @@
   {
     "in": "http://www.Example.com/a//b/?utm_source=x&id=1#c",
     "out": "https://example.com/a/b?id=1"
+  },
+  {
+    "in": "https://example.com:443/x",
+    "out": "https://example.com/x"
+  },
+  {
+    "in": "http://example.com:80/x",
+    "out": "https://example.com/x"
+  },
+  {
+    "in": "https://m.example.com/x",
+    "out": "https://example.com/x"
+  },
+  {
+    "in": "https://mobile.example.com/x",
+    "out": "https://example.com/x"
+  },
+  {
+    "in": "https://example.com/a///b/",
+    "out": "https://example.com/a/b"
+  },
+  {
+    "in": "https://example.com/",
+    "out": "https://example.com/"
   }
 ]
