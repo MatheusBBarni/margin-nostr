@@ -1,5 +1,30 @@
 import { describe, expect, test } from "bun:test"
-import { buildReply, buildTopLevel } from "./events"
+import { finalizeEvent, generateSecretKey } from "nostr-tools/pure"
+import { buildReply, buildTopLevel, parseComment } from "./events"
+
+const ROOM = "https://example.com/x"
+const sk = generateSecretKey()
+
+function sign(partial: {
+  kind?: number
+  content?: string
+  tags?: string[][]
+}) {
+  return finalizeEvent(
+    {
+      kind: partial.kind ?? 1111,
+      created_at: 1_700_000_000,
+      content: partial.content ?? "Nice article!",
+      tags: partial.tags ?? [
+        ["I", ROOM],
+        ["K", "web"],
+        ["i", ROOM],
+        ["k", "web"],
+      ],
+    },
+    sk,
+  )
+}
 
 describe("buildTopLevel", () => {
   test("builds a kind 1111 with I/K=web/i/k=web and trimmed content", () => {
@@ -42,5 +67,32 @@ describe("comment content", () => {
     expect(() => buildTopLevel("https://example.com/x", "   ")).toThrow()
     expect(() => buildTopLevel("https://example.com/x", "a".repeat(4001))).toThrow()
     expect(() => buildReply("https://example.com/x", "", parent)).toThrow()
+  })
+})
+
+describe("parseComment", () => {
+  test("accepts a valid signed room event and drops invalid ones", () => {
+    const good = sign({})
+    const parsed = parseComment(good, ROOM)
+    expect(parsed).not.toBeNull()
+    expect(parsed?.id).toBe(good.id)
+    expect(parsed?.content).toBe("Nice article!")
+    expect(parsed?.parentId).toBeUndefined()
+
+    const badSig = { ...good, sig: "00".repeat(64) }
+    expect(parseComment(badSig, ROOM)).toBeNull()
+    expect(parseComment(sign({ kind: 1 }), ROOM)).toBeNull()
+    expect(parseComment(sign({}), "https://other.example/x")).toBeNull()
+    expect(
+      parseComment(
+        sign({
+          tags: [
+            ["I", ROOM],
+            ["i", ROOM],
+          ],
+        }),
+        ROOM,
+      ),
+    ).toBeNull()
   })
 })

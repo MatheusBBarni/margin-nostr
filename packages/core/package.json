@@ -1,5 +1,8 @@
 {
   "name": "@margin/core",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "nostr-tools": "^2.24.1"
+  }
 }
