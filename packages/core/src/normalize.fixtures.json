@@ -26,5 +26,21 @@
   {
     "in": "https://example.com/",
     "out": "https://example.com/"
+  },
+  {
+    "in": "https://www.youtube.com/watch?v=dQw4w9wg&si=share",
+    "out": "https://youtube.com/watch?v=dQw4w9wg"
+  },
+  {
+    "in": "https://example.com/x?utm_campaign=c&fbclid=1&gclid=2&id=9",
+    "out": "https://example.com/x?id=9"
+  },
+  {
+    "in": "https://example.com/x?ref=twitter&page=2",
+    "out": "https://example.com/x?page=2"
+  },
+  {
+    "in": "https://example.com/x?b=1&a=2",
+    "out": "https://example.com/x?a=2&b=1"
   }
 ]
