@@ -1,0 +1,9 @@
+@import "@margin/ui/styles.css";
+@source "./**/*.{ts,tsx}";
+
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+}
