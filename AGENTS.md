@@ -12,7 +12,8 @@ Do not invent a different product, protocol, or stack.
 Do not reopen a locked decision in this file without asking the user.
 
 The public product idea lives in [README.md](./README.md).
-`IDEA.md`, `PRD.md`, `TECHSPEC.md`, and `DESIGN.md` are local scratch.
+Visual reference lives in [DESIGN.md](./DESIGN.md).
+`IDEA.md`, `PRD.md`, and `TECHSPEC.md` are local scratch.
 They will not be in the public repo.
 If they are present, they may explain *why* something landed here.
 They are not authority.
