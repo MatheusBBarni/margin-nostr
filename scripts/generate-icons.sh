@@ -59,9 +59,9 @@ for size in 16 32 48 96 128; do
   export_png24 "$tmp/minimal.png" "$size" "$ext_public/icon-${size}.png"
 done
 
-export_png24 "$tmp/full.png" 16 "$web_public/favicon-16.png"
-export_png24 "$tmp/full.png" 32 "$web_public/favicon.png"
-export_png24 "$tmp/full.png" 180 "$web_public/apple-touch-icon.png"
+cp "$ext_public/icon-16.png" "$web_public/favicon-16.png"
+cp "$ext_public/icon-32.png" "$web_public/favicon.png"
+export_png24 "$tmp/minimal.png" 180 "$web_public/apple-touch-icon.png"
 
 magick "$full" \
   -colorspace sRGB \

@@ -24,4 +24,5 @@ export const KV_KEYS = {
   extraRelays: "extraRelays",
   followsCache: "followsCache",
   nip65Cache: "nip65Cache",
+  selfProfile: "selfProfile",
 } as const

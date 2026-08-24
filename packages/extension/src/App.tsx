@@ -7,13 +7,18 @@ import {
   createBunkerSigner,
   createExtensionMessageSigner,
   detectExtensionSigner,
+  evictProfileCache,
+  fetchProfiles,
+  hydrateSelfProfile,
   nest,
   normalizeUrl,
   parseComment,
+  persistSelfProfile,
   publishRoom,
   readRelays,
   subscribeRoom,
   writeRelays,
+  type Profile,
   type Signer,
   type StoredSigner,
   type ThemePreference,
@@ -24,17 +29,14 @@ import { Thread, applyTheme } from "@margin/ui"
 import { SimplePool } from "nostr-tools"
 import { bytesToHex, hexToBytes } from "nostr-tools/utils"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { setTabBadge } from "./badge"
 import { chromeKv } from "./chromeKv"
+import { isSkippableUrl } from "./skipUrl"
 
 const PUBLIC_ORIGIN = import.meta.env.VITE_PUBLIC_ORIGIN ?? "http://localhost:5173"
 
 function isSkippable(url: string): boolean {
-  return (
-    url.startsWith("chrome:") ||
-    url.startsWith("about:") ||
-    url.startsWith("chrome-extension:") ||
-    url.startsWith("moz-extension:")
-  )
+  return isSkippableUrl(url)
 }
 
 function permalinkFor(normalized: string): string {
@@ -48,6 +50,7 @@ export function App() {
   const [filter, setFilter] = useState<"follows" | "everyone">("everyone")
   const [replyTo, setReplyTo] = useState<VerifiedComment | null>(null)
   const [pubkey, setPubkey] = useState<string | null>(null)
+  const [profiles, setProfiles] = useState<Map<string, Profile>>(new Map())
   const signerRef = useRef<Signer | null>(null)
   const poolRef = useRef<SimplePool | null>(null)
 
@@ -116,6 +119,25 @@ export function App() {
   }, [room])
 
   useEffect(() => {
+    const pubkeys = [...new Set(comments.map((comment) => comment.pubkey).concat(pubkey ? [pubkey] : []))]
+    if (pubkeys.length === 0) return
+    const pool = poolRef.current ?? new SimplePool()
+    let cancelled = false
+    void fetchProfiles(pool, readRelays(), pubkeys).then((next) => {
+      if (cancelled) return
+      setProfiles((current) => {
+        const merged = new Map(current)
+        for (const [key, profile] of next) merged.set(key, profile)
+        return merged
+      })
+      if (pubkey) void persistSelfProfile(chromeKv, pubkey)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [comments, pubkey])
+
+  useEffect(() => {
     void (async () => {
       const stored = await chromeKv.get<StoredSigner>(KV_KEYS.signer)
       if (!stored) return
@@ -126,7 +148,9 @@ export function App() {
             stored.extensionId,
           )
           signerRef.current = signer
-          setPubkey(await signer.getPublicKey())
+          const hex = await signer.getPublicKey()
+          await applyCachedSelf(hex)
+          setPubkey(hex)
           return
         }
         if (stored.method === "bunker" && stored.bunkerPointer && stored.clientSkHex && poolRef.current) {
@@ -136,7 +160,9 @@ export function App() {
             pool: poolRef.current,
           })
           signerRef.current = signer
-          setPubkey(await signer.getPublicKey())
+          const hex = await signer.getPublicKey()
+          await applyCachedSelf(hex)
+          setPubkey(hex)
         }
       } catch {
         signerRef.current = null
@@ -152,7 +178,9 @@ export function App() {
       return
     }
     signerRef.current = found.signer
-    setPubkey(await found.signer.getPublicKey())
+    const hex = await found.signer.getPublicKey()
+    await applyCachedSelf(hex)
+    setPubkey(hex)
     await chromeKv.set<StoredSigner>(KV_KEYS.signer, {
       method: "extension-message",
       extensionId: found.extensionId,
@@ -167,7 +195,9 @@ export function App() {
     poolRef.current = pool
     const { signer, clientSk } = await createBunkerSigner({ bunkerUri: uri, pool })
     signerRef.current = signer
-    setPubkey(await signer.getPublicKey())
+    const hex = await signer.getPublicKey()
+    await applyCachedSelf(hex)
+    setPubkey(hex)
     await chromeKv.set<StoredSigner>(KV_KEYS.signer, {
       method: "bunker",
       bunkerPointer: uri,
@@ -176,11 +206,20 @@ export function App() {
     setError(null)
   }
 
+  async function applyCachedSelf(hex: string) {
+    const profile = await hydrateSelfProfile(chromeKv, hex)
+    if (!profile) return
+    setProfiles((current) => new Map(current).set(hex, profile))
+  }
+
   async function logout() {
     await signerRef.current?.close?.()
     signerRef.current = null
+    if (pubkey) evictProfileCache(pubkey)
     setPubkey(null)
+    setProfiles(new Map())
     await chromeKv.delete(KV_KEYS.signer)
+    await chromeKv.delete(KV_KEYS.selfProfile)
   }
 
   async function onSubmit(text: string) {
@@ -195,6 +234,10 @@ export function App() {
     setComments((current) => [...current, parsed])
     await publishRoom(poolRef.current ?? new SimplePool(), writeRelays(), signed)
     setReplyTo(null)
+    const tabs = await browser.tabs.query({ active: true, currentWindow: true })
+    const tabId = tabs[0]?.id
+    if (tabId != null) await setTabBadge(tabId, comments.length + 1)
+    void browser.runtime.sendMessage({ type: "probeBadge" }).catch(() => {})
   }
 
   if (roomState.status === "skippable") {
@@ -216,16 +259,14 @@ export function App() {
   return (
     <Thread
       nodes={nodes}
-      profiles={new Map()}
+      profiles={profiles}
       self={pubkey}
       filter={filter}
       onFilter={setFilter}
       onReply={(parentId) => setReplyTo(comments.find((row) => row.id === parentId) ?? null)}
       permalink={permalinkFor(room)}
       normalizedUrl={room}
-      onCopyPermalink={() => {
-        void navigator.clipboard.writeText(permalinkFor(room))
-      }}
+      onCopyPermalink={() => navigator.clipboard.writeText(permalinkFor(room))}
       replyTo={replyTo}
       composeDisabled={!pubkey}
       onSubmit={onSubmit}

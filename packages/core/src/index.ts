@@ -48,3 +48,15 @@ export {
   detectExtensionSigner,
 } from "./signers/extension-message"
 export type { ExtensionMessenger, Nip07Nostr, Signer, SignerId } from "./signers/types"
+export {
+  clearProfileCache,
+  evictProfileCache,
+  fetchProfiles,
+  hydrateSelfProfile,
+  parseProfile,
+  parseStoredSelfProfile,
+  persistSelfProfile,
+  type Profile,
+  type QueryPool,
+  type StoredSelfProfile,
+} from "./profiles"

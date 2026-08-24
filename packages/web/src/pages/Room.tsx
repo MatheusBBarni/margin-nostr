@@ -6,13 +6,18 @@ import {
   buildTopLevel,
   createBunkerSigner,
   createNip07Signer,
+  evictProfileCache,
+  fetchProfiles,
+  hydrateSelfProfile,
   nest,
   normalizeUrl,
   parseComment,
+  persistSelfProfile,
   publishRoom,
   readRelays,
   subscribeRoom,
   writeRelays,
+  type Profile,
   type Signer,
   type StoredSigner,
   type ThemePreference,
@@ -49,6 +54,7 @@ export function Room() {
   const [filter, setFilter] = useState<"follows" | "everyone">("everyone")
   const [replyTo, setReplyTo] = useState<VerifiedComment | null>(null)
   const [pubkey, setPubkey] = useState<string | null>(null)
+  const [profiles, setProfiles] = useState<Map<string, Profile>>(new Map())
   const signerRef = useRef<Signer | null>(null)
   const poolRef = useRef<SimplePool | null>(null)
 
@@ -101,13 +107,34 @@ export function Room() {
   }, [room])
 
   useEffect(() => {
+    const pubkeys = [...new Set(comments.map((comment) => comment.pubkey).concat(pubkey ? [pubkey] : []))]
+    if (pubkeys.length === 0) return
+    const pool = poolRef.current ?? new SimplePool()
+    let cancelled = false
+    void fetchProfiles(pool, readRelays(), pubkeys).then((next) => {
+      if (cancelled) return
+      setProfiles((current) => {
+        const merged = new Map(current)
+        for (const [key, profile] of next) merged.set(key, profile)
+        return merged
+      })
+      if (pubkey) void persistSelfProfile(localKv, pubkey)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [comments, pubkey])
+
+  useEffect(() => {
     void (async () => {
       const stored = await localKv.get<StoredSigner>(KV_KEYS.signer)
       try {
         if (window.nostr) {
           const signer = createNip07Signer(window.nostr)
           signerRef.current = signer
-          setPubkey(await signer.getPublicKey())
+          const hex = await signer.getPublicKey()
+          await applyCachedSelf(hex)
+          setPubkey(hex)
           await localKv.set<StoredSigner>(KV_KEYS.signer, { method: "nip07" })
           return
         }
@@ -118,7 +145,9 @@ export function Room() {
             pool: poolRef.current,
           })
           signerRef.current = signer
-          setPubkey(await signer.getPublicKey())
+          const hex = await signer.getPublicKey()
+          await applyCachedSelf(hex)
+          setPubkey(hex)
         }
       } catch {
         signerRef.current = null
@@ -134,7 +163,9 @@ export function Room() {
     }
     const signer = createNip07Signer(window.nostr)
     signerRef.current = signer
-    setPubkey(await signer.getPublicKey())
+    const hex = await signer.getPublicKey()
+    await applyCachedSelf(hex)
+    setPubkey(hex)
     await localKv.set<StoredSigner>(KV_KEYS.signer, { method: "nip07" })
     setError(null)
   }
@@ -146,7 +177,9 @@ export function Room() {
     poolRef.current = pool
     const { signer, clientSk } = await createBunkerSigner({ bunkerUri: uri, pool })
     signerRef.current = signer
-    setPubkey(await signer.getPublicKey())
+    const hex = await signer.getPublicKey()
+    await applyCachedSelf(hex)
+    setPubkey(hex)
     await localKv.set<StoredSigner>(KV_KEYS.signer, {
       method: "bunker",
       bunkerPointer: uri,
@@ -155,11 +188,20 @@ export function Room() {
     setError(null)
   }
 
+  async function applyCachedSelf(hex: string) {
+    const profile = await hydrateSelfProfile(localKv, hex)
+    if (!profile) return
+    setProfiles((current) => new Map(current).set(hex, profile))
+  }
+
   async function logout() {
     await signerRef.current?.close?.()
     signerRef.current = null
+    if (pubkey) evictProfileCache(pubkey)
     setPubkey(null)
+    setProfiles(new Map())
     await localKv.delete(KV_KEYS.signer)
+    await localKv.delete(KV_KEYS.selfProfile)
   }
 
   async function onSubmit(text: string) {
@@ -188,16 +230,14 @@ export function Room() {
     <div className="mx-auto flex min-h-screen max-w-xl flex-col">
       <Thread
         nodes={nodes}
-        profiles={new Map()}
+        profiles={profiles}
         self={pubkey}
         filter={filter}
         onFilter={setFilter}
         onReply={(parentId) => setReplyTo(comments.find((row) => row.id === parentId) ?? null)}
         permalink={permalinkFor(room)}
         normalizedUrl={room}
-        onCopyPermalink={() => {
-          void navigator.clipboard.writeText(permalinkFor(room))
-        }}
+        onCopyPermalink={() => navigator.clipboard.writeText(permalinkFor(room))}
         replyTo={replyTo}
         composeDisabled={!pubkey}
         onSubmit={onSubmit}
