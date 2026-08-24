@@ -4,6 +4,9 @@
   "workspaces": ["packages/*"],
   "packageManager": "bun@1.3.13",
   "scripts": {
-    "test": "bun test packages/core"
+    "test": "bun test packages/core",
+    "dev:extension": "bun run --filter @margin/extension dev",
+    "dev:web": "bun run --filter @margin/web dev",
+    "probe": "bun run --filter @margin/core probe"
   }
 }

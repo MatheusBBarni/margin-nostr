@@ -5,6 +5,9 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "scripts": {
+    "probe": "bun scripts/probe.ts"
+  },
   "dependencies": {
     "nostr-tools": "^2.24.1"
   }
