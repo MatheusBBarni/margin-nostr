@@ -1,0 +1,7 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["wxt/client"]
+  },
+  "include": ["entrypoints", "src", "wxt.config.ts"]
+}

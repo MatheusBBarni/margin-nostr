@@ -1,0 +1,10 @@
+@import "@margin/ui/styles.css";
+@source "./**/*.{ts,tsx}";
+@source "../entrypoints/**/*.{ts,tsx}";
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
