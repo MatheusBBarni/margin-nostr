@@ -1,12 +1,19 @@
 import { Button, Input } from "@heroui/react"
 import { NormalizeError, normalizeUrl } from "@margin/core"
-import { FormEvent, useState } from "react"
+import { applyTheme } from "@margin/ui"
+import { FormEvent, useEffect, useState } from "react"
 import { useNavigate } from "react-router"
+import { AboutModal } from "./AboutModal"
 
 export function Home() {
   const navigate = useNavigate()
   const [url, setUrl] = useState("")
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    applyTheme("dark")
+    document.title = "Margin"
+  }, [])
 
   function onSubmit(event: FormEvent) {
     event.preventDefault()
@@ -19,14 +26,21 @@ export function Home() {
   }
 
   return (
-    <main className="mx-auto flex max-w-xl flex-col gap-6 p-8">
-      <div className="flex flex-col gap-2">
-        <p className="font-mono text-xs tracking-wide text-[var(--muted-foreground)]">MARGIN</p>
-        <h1 className="text-3xl font-normal tracking-tight">Comments on any URL.</h1>
-        <p className="text-sm leading-6 text-[var(--muted-foreground)]">
-          A URL is a room. Comments are signed Nostr notes. Install the extension to comment from the page,
-          or paste a link here.
-        </p>
+    <main className="mx-auto flex min-h-dvh max-w-xl flex-col justify-center gap-8 p-8">
+      <div className="flex flex-col items-start gap-5">
+        <img
+          alt="Margin"
+          className="h-36 w-auto rounded-md sm:h-44"
+          height={278}
+          src="/logo-full.png"
+          width={221}
+        />
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-normal tracking-tight text-pretty">Comments on any URL.</h1>
+          <p className="text-sm leading-6 text-[var(--muted-foreground)]">
+            Paste a link to open its room. Or install the extension and stay on the page.
+          </p>
+        </div>
       </div>
       <form className="flex flex-col gap-3" onSubmit={onSubmit}>
         <Input
@@ -42,9 +56,7 @@ export function Home() {
         ) : null}
         <Button type="submit">Open thread</Button>
       </form>
-      <p className="text-sm text-[var(--muted-foreground)]">
-        Extension: load the unpacked Chromium build from the Margin repo. No nsec. No overlay on the page.
-      </p>
+      <AboutModal />
     </main>
   )
 }

@@ -140,9 +140,12 @@ bun run --filter @margin/extension build:firefox
 bun run --filter @margin/web dev
 bun run --filter @margin/web build
 bun probe                              # #I round-trip on curated relays
+./scripts/generate-icons.sh            # rasterize assets/*.jpg → public icons
 ```
 
 If `rtk` is on PATH, prefix those commands with `rtk`.
+
+Brand marks: `assets/margin_minimal_logo.jpg` (toolbar / favicon) and `assets/margin_full_logo.jpg` (wordmark). Icons are opaque white + black. Do not punch white to alpha. Do not open `icon-16.png` or `favicon-16.png` in a vision model — 16×16 is under the 512-pixel floor and 400s. Verify with `identify` or a 512px preview.
 
 ---
 
