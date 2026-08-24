@@ -2,6 +2,7 @@ import { finalizeEvent, generateSecretKey } from "nostr-tools/pure"
 import { SimplePool } from "nostr-tools"
 import { writeFile } from "node:fs/promises"
 import { buildTopLevel } from "../src/events"
+import { subscribeRoom } from "../src/pool"
 import { CURATED_RELAYS } from "../src/relays"
 
 const TIMEOUT_MS = 8_000
@@ -11,6 +12,22 @@ async function probeRelay(url: string): Promise<"ok" | "no-index" | "unreachable
   const sk = generateSecretKey()
   const room = `https://example.com/margin-probe/${crypto.randomUUID()}`
   const signed = finalizeEvent(buildTopLevel(room, "margin probe"), sk)
+
+  const found = new Promise<boolean>((resolve) => {
+    let sub: { close: () => void } | undefined
+    const timer = setTimeout(() => {
+      sub?.close()
+      resolve(false)
+    }, TIMEOUT_MS)
+    sub = subscribeRoom(pool, [url], room, {
+      onevent(comment) {
+        if (comment.id !== signed.id) return
+        clearTimeout(timer)
+        sub?.close()
+        resolve(true)
+      },
+    })
+  })
 
   try {
     await Promise.race([
@@ -22,25 +39,9 @@ async function probeRelay(url: string): Promise<"ok" | "no-index" | "unreachable
     return "unreachable"
   }
 
-  const found = await new Promise<boolean>((resolve) => {
-    const timer = setTimeout(() => resolve(false), TIMEOUT_MS)
-    const sub = pool.subscribeMany(
-      [url],
-      [{ ids: [signed.id] }, { kinds: [1111], "#I": [room], limit: 5 }],
-      {
-        onevent(event) {
-          if (event.id === signed.id) {
-            clearTimeout(timer)
-            sub.close()
-            resolve(true)
-          }
-        },
-      },
-    )
-  })
-
+  const ok = await found
   pool.close([url])
-  return found ? "ok" : "no-index"
+  return ok ? "ok" : "no-index"
 }
 
 const lines = ["# Curated relay `#I` probe", "", `Ran: ${new Date().toISOString()}`, ""]
