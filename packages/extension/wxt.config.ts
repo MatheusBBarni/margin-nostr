@@ -8,6 +8,7 @@ export default defineConfig({
   }),
   manifest: {
     name: "Margin",
+    version: "0.1.0",
     description: "Follows-first comments on any URL",
     permissions: ["storage", "tabs", "sidePanel"],
     host_permissions: ["wss://*/*", "https://*/*"],

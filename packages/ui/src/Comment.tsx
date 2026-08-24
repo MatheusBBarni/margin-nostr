@@ -13,7 +13,7 @@ type Props = {
   profiles: Map<string, Profile>
   self: string | null
   onReply: (parentId: string) => void
-  onMute: (pubkey: string) => void
+  onMute?: (pubkey: string) => void
 }
 
 function displayName(pubkey: string, profile?: Profile): string {
@@ -56,7 +56,7 @@ export function Comment({ node, profiles, self, onReply, onMute }: Props) {
             <Button size="sm" variant="tertiary" onPress={() => onReply(comment.id)}>
               Reply
             </Button>
-            {self !== comment.pubkey ? (
+            {onMute && self !== comment.pubkey ? (
               <Button size="sm" variant="tertiary" onPress={() => onMute(comment.pubkey)}>
                 Mute
               </Button>

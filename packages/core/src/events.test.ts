@@ -95,4 +95,21 @@ describe("parseComment", () => {
       ),
     ).toBeNull()
   })
+
+  test("classifies a signed reply by e + k=1111", () => {
+    const parentId = "aa".repeat(32)
+    const parentPubkey = "bb".repeat(32)
+    const reply = sign({
+      content: "a reply",
+      tags: [
+        ["I", ROOM],
+        ["K", "web"],
+        ["e", parentId, "", parentPubkey],
+        ["k", "1111"],
+        ["p", parentPubkey, ""],
+      ],
+    })
+    const parsed = parseComment(reply, ROOM)
+    expect(parsed?.parentId).toBe(parentId)
+  })
 })

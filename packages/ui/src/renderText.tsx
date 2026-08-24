@@ -1,7 +1,8 @@
 import type { ReactNode } from "react"
 
-const TOKEN =
-  /(https?:\/\/[^\s<]+|nostr:[a-z0-9]+|npub1[ac-hj-np-z02-9]+|note1[ac-hj-np-z02-9]+|nevent1[ac-hj-np-z02-9]+)/gi
+const TOKEN_SOURCE =
+  "(https?:\\/\\/[^\\s<]+|nostr:[a-z0-9]+|npub1[ac-hj-np-z02-9]+|note1[ac-hj-np-z02-9]+|nevent1[ac-hj-np-z02-9]+)"
+const TOKEN_TEST = new RegExp(`^${TOKEN_SOURCE}$`, "i")
 
 function hrefFor(token: string): string {
   if (token.startsWith("http://") || token.startsWith("https://")) return token
@@ -10,10 +11,10 @@ function hrefFor(token: string): string {
 }
 
 export function renderText(content: string): ReactNode {
-  const parts = content.split(TOKEN)
+  const parts = content.split(new RegExp(TOKEN_SOURCE, "gi"))
   return parts.map((part, index) => {
     if (!part) return null
-    if (part.match(TOKEN)) {
+    if (TOKEN_TEST.test(part)) {
       return (
         <a
           key={`${part}-${index}`}

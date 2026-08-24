@@ -34,7 +34,16 @@ function permalinkFor(normalized: string): string {
 
 export function Room() {
   const params = useParams()
-  const raw = params["*"] ? decodeURIComponent(params["*"]) : ""
+  const raw = useMemo(() => {
+    const splat = params["*"] ?? ""
+    if (!splat) return ""
+    if (/^https?:\/\//i.test(splat)) return splat
+    try {
+      return decodeURIComponent(splat)
+    } catch {
+      return ""
+    }
+  }, [params])
   const [error, setError] = useState<string | null>(null)
   const [comments, setComments] = useState<VerifiedComment[]>([])
   const [filter, setFilter] = useState<"follows" | "everyone">("everyone")
@@ -70,9 +79,10 @@ export function Room() {
   }, [])
 
   useEffect(() => {
+    setComments([])
+    setReplyTo(null)
     if (!room) {
       document.title = "Comments"
-      setComments([])
       return
     }
     document.title = `Comments on ${room}`
@@ -157,7 +167,11 @@ export function Room() {
     const unsigned = replyTo ? buildReply(room, text, replyTo) : buildTopLevel(room, text)
     const signed = await signerRef.current.signEvent(unsigned)
     const parsed = parseComment(signed, room)
-    if (parsed) setComments((current) => [...current, parsed])
+    if (!parsed) {
+      setError("Signer returned an event we could not verify.")
+      return
+    }
+    setComments((current) => [...current, parsed])
     await publishRoom(poolRef.current ?? new SimplePool(), writeRelays(), signed)
     setReplyTo(null)
   }
@@ -179,9 +193,11 @@ export function Room() {
         filter={filter}
         onFilter={setFilter}
         onReply={(parentId) => setReplyTo(comments.find((row) => row.id === parentId) ?? null)}
-        onMute={() => undefined}
         permalink={permalinkFor(room)}
         normalizedUrl={room}
+        onCopyPermalink={() => {
+          void navigator.clipboard.writeText(permalinkFor(room))
+        }}
         replyTo={replyTo}
         composeDisabled={!pubkey}
         onSubmit={onSubmit}

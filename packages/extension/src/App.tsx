@@ -51,15 +51,15 @@ export function App() {
   const signerRef = useRef<Signer | null>(null)
   const poolRef = useRef<SimplePool | null>(null)
 
-  const room = useMemo(() => {
-    if (!tabUrl || isSkippable(tabUrl)) return null
+  const roomState = useMemo(() => {
+    if (!tabUrl || isSkippable(tabUrl)) return { status: "skippable" as const }
     try {
-      return normalizeUrl(tabUrl)
+      return { status: "ok" as const, url: normalizeUrl(tabUrl) }
     } catch (cause) {
-      if (cause instanceof NormalizeError) return null
-      return null
+      return { status: "invalid" as const, reason: cause instanceof NormalizeError ? cause.message : "invalid URL" }
     }
   }, [tabUrl])
+  const room = roomState.status === "ok" ? roomState.url : null
 
   const nodes: ThreadNode[] = useMemo(() => {
     const nested = nest(comments)
@@ -95,10 +95,9 @@ export function App() {
   }, [refreshTab])
 
   useEffect(() => {
-    if (!room) {
-      setComments([])
-      return
-    }
+    setComments([])
+    setReplyTo(null)
+    if (!room) return
     const pool = new SimplePool()
     poolRef.current = pool
     const seen = new Set<string>()
@@ -189,15 +188,27 @@ export function App() {
     const unsigned = replyTo ? buildReply(room, text, replyTo) : buildTopLevel(room, text)
     const signed = await signerRef.current.signEvent(unsigned)
     const parsed = parseComment(signed, room)
-    if (parsed) setComments((current) => [...current, parsed])
+    if (!parsed) {
+      setError("Signer returned an event we could not verify.")
+      return
+    }
+    setComments((current) => [...current, parsed])
     await publishRoom(poolRef.current ?? new SimplePool(), writeRelays(), signed)
     setReplyTo(null)
   }
 
-  if (!tabUrl || isSkippable(tabUrl) || !room) {
+  if (roomState.status === "skippable") {
     return (
       <div className="bg-background text-foreground p-4 text-sm">
         Open an https page to see this room.
+      </div>
+    )
+  }
+
+  if (roomState.status === "invalid" || !room) {
+    return (
+      <div className="bg-background text-foreground p-4 text-sm" role="alert">
+        This URL is not a valid room.
       </div>
     )
   }
@@ -210,9 +221,11 @@ export function App() {
       filter={filter}
       onFilter={setFilter}
       onReply={(parentId) => setReplyTo(comments.find((row) => row.id === parentId) ?? null)}
-      onMute={() => undefined}
       permalink={permalinkFor(room)}
       normalizedUrl={room}
+      onCopyPermalink={() => {
+        void navigator.clipboard.writeText(permalinkFor(room))
+      }}
       replyTo={replyTo}
       composeDisabled={!pubkey}
       onSubmit={onSubmit}

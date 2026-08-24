@@ -21,8 +21,8 @@ function sign(tags: string[][], content = "hi") {
 describe("subscribeRoom", () => {
   test("verifies, room-checks, and dedups by id", () => {
     const seen: string[] = []
-    let capturedFilters: unknown[] = []
-    let closed = false
+    const capturedFilters: object[] = []
+    let closed = 0
 
     const good = sign([
       ["I", ROOM],
@@ -38,18 +38,21 @@ describe("subscribeRoom", () => {
     ])
 
     const pool: PoolLike = {
-      subscribeMany(_relays, filters, opts) {
-        capturedFilters = filters
-        opts.onevent(good)
-        opts.onevent(good)
-        opts.onevent({ ...good, sig: "00".repeat(64) })
-        opts.onevent(otherRoom)
+      subscribeMany(_relays, filter, opts) {
+        capturedFilters.push(filter)
+        if (capturedFilters.length === 1) {
+          opts.onevent(good)
+          opts.onevent(good)
+          opts.onevent({ ...good, sig: "00".repeat(64) })
+          opts.onevent(otherRoom)
+        }
         return {
           close() {
-            closed = true
+            closed += 1
           },
         }
       },
+      publish: () => [],
     }
 
     const sub = subscribeRoom(pool, ["wss://relay.example"], ROOM, {
@@ -64,7 +67,7 @@ describe("subscribeRoom", () => {
       { kinds: [1111], "#I": [ROOM], limit: 200 },
       { kinds: [1111], "#i": [ROOM], limit: 200 },
     ])
-    expect(closed).toBe(true)
+    expect(closed).toBe(2)
   })
 
   test("publishRoom reports per-relay ok and failed", async () => {

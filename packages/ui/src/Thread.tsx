@@ -15,9 +15,10 @@ type Props = {
   filter: FilterMode
   onFilter: (filter: FilterMode) => void
   onReply: (parentId: string) => void
-  onMute: (pubkey: string) => void
+  onMute?: (pubkey: string) => void
   permalink: string
   normalizedUrl: string
+  onCopyPermalink: () => void
   relayHealth?: RelayHealth[]
   replyTo?: VerifiedComment | null
   composeDisabled: boolean
@@ -40,6 +41,7 @@ export function Thread({
   onMute,
   permalink,
   normalizedUrl,
+  onCopyPermalink,
   relayHealth,
   replyTo = null,
   composeDisabled,
@@ -94,7 +96,12 @@ export function Thread({
         onSubmit={onSubmit}
         onCancelReply={onCancelReply}
       />
-      <RoomFooter normalizedUrl={normalizedUrl} permalink={permalink} relayHealth={relayHealth} />
+      <RoomFooter
+        normalizedUrl={normalizedUrl}
+        permalink={permalink}
+        onCopyPermalink={onCopyPermalink}
+        relayHealth={relayHealth}
+      />
     </div>
   )
 }

@@ -12,7 +12,7 @@ export type RoomHandlers = {
 export type PoolLike = {
   subscribeMany: (
     relays: string[],
-    filters: object[],
+    filter: object,
     opts: { onevent: (event: Event) => void },
   ) => RoomSub
   publish: (relays: string[], event: Event) => Promise<unknown>[]
@@ -25,21 +25,23 @@ export function subscribeRoom(
   handlers: RoomHandlers,
 ): RoomSub {
   const seen = new Set<string>()
-  return pool.subscribeMany(
-    relays,
-    [
-      { kinds: [KIND_COMMENT], "#I": [normalizedUrl], limit: 200 },
-      { kinds: [KIND_COMMENT], "#i": [normalizedUrl], limit: 200 },
-    ],
-    {
-      onevent(event) {
-        const parsed = parseComment(event, normalizedUrl)
-        if (!parsed || seen.has(parsed.id)) return
-        seen.add(parsed.id)
-        handlers.onevent(parsed)
-      },
+  const opts = {
+    onevent(event: Event) {
+      const parsed = parseComment(event, normalizedUrl)
+      if (!parsed || seen.has(parsed.id)) return
+      seen.add(parsed.id)
+      handlers.onevent(parsed)
     },
-  )
+  }
+  const subs = [
+    pool.subscribeMany(relays, { kinds: [KIND_COMMENT], "#I": [normalizedUrl], limit: 200 }, opts),
+    pool.subscribeMany(relays, { kinds: [KIND_COMMENT], "#i": [normalizedUrl], limit: 200 }, opts),
+  ]
+  return {
+    close() {
+      for (const sub of subs) sub.close()
+    },
+  }
 }
 
 export async function publishRoom(
