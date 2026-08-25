@@ -1,5 +1,12 @@
 import { verifyEvent, type Event } from "nostr-tools/pure"
+import { KV_KEYS, type Kv } from "./kv"
 import type { QueryPool } from "./profiles"
+
+export type FollowsCache = {
+  pubkey: string
+  ids: string[]
+  fetchedAt: number
+}
 
 const PUBKEY_HEX = /^[0-9a-f]{64}$/i
 
@@ -33,4 +40,28 @@ export async function fetchFollows(
     if (!newest || event.created_at > newest.created_at) newest = event
   }
   return newest ? parseFollows(newest) : []
+}
+
+export function parseFollowsCache(value: unknown): FollowsCache | null {
+  if (!value || typeof value !== "object") return null
+  const record = value as Record<string, unknown>
+  if (typeof record.pubkey !== "string" || !PUBKEY_HEX.test(record.pubkey)) return null
+  if (typeof record.fetchedAt !== "number" || !Number.isFinite(record.fetchedAt)) return null
+  if (!Array.isArray(record.ids)) return null
+  const ids: string[] = []
+  const seen = new Set<string>()
+  for (const id of record.ids) {
+    if (typeof id !== "string") continue
+    const hex = id.toLowerCase()
+    if (!PUBKEY_HEX.test(hex) || seen.has(hex)) continue
+    seen.add(hex)
+    ids.push(hex)
+  }
+  return { pubkey: record.pubkey.toLowerCase(), ids, fetchedAt: record.fetchedAt }
+}
+
+export async function hydrateFollows(kv: Kv, pubkey: string): Promise<string[] | null> {
+  const stored = parseFollowsCache(await kv.get(KV_KEYS.followsCache))
+  if (!stored || stored.pubkey !== pubkey.toLowerCase()) return null
+  return stored.ids
 }
