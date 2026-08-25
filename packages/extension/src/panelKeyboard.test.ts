@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test"
-import { decideFocusTarget, decidePanelCommand, shouldApplyOpenFocus } from "./panelKeyboard"
+import {
+  decideFocusTarget,
+  decidePanelCommand,
+  shouldApplyOpenFocus,
+  shouldHandleComposeShortcut,
+} from "./panelKeyboard"
 
 describe("decidePanelCommand", () => {
   test("opens the panel when the command fires and the panel is closed", () => {
@@ -51,5 +56,19 @@ describe("decideFocusTarget", () => {
 describe("shouldApplyOpenFocus", () => {
   test("does not apply open-focus when the user already moved focus", () => {
     expect(shouldApplyOpenFocus({ userHasMovedFocus: true })).toBe(false)
+  })
+})
+
+describe("shouldHandleComposeShortcut", () => {
+  test("handles bare c outside a field", () => {
+    expect(
+      shouldHandleComposeShortcut({
+        key: "c",
+        altKey: false,
+        ctrlKey: false,
+        metaKey: false,
+        targetIsEditable: false,
+      }),
+    ).toBe(true)
   })
 })
