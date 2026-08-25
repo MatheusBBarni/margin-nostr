@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test"
-import { finalizeEvent, generateSecretKey } from "nostr-tools/pure"
+import { finalizeEvent, generateSecretKey, getPublicKey } from "nostr-tools/pure"
 import { KIND_COMMENT } from "./events"
-import { publishRoom, subscribeRoom, type PoolLike } from "./pool"
+import { publishRoom, subscribeOwnComments, subscribeRoom, type PoolLike } from "./pool"
 
 const ROOM = "https://example.com/x"
 const sk = generateSecretKey()
 
-function sign(tags: string[][], content = "hi") {
+function sign(tags: string[][], content = "hi", key = sk) {
   return finalizeEvent(
     {
       kind: KIND_COMMENT,
@@ -14,7 +14,7 @@ function sign(tags: string[][], content = "hi") {
       content,
       tags,
     },
-    sk,
+    key,
   )
 }
 
@@ -90,5 +90,57 @@ describe("subscribeRoom", () => {
     const result = await publishRoom(pool, ["wss://ok.example", "wss://bad.example"], signed)
     expect(result.ok).toEqual(["wss://ok.example"])
     expect(result.failed).toEqual(["wss://bad.example"])
+  })
+})
+
+describe("subscribeOwnComments", () => {
+  test("uses authors filter and ignores junk, other pubkeys, and dupes", () => {
+    const self = getPublicKey(sk)
+    const other = sign(
+      [
+        ["I", ROOM],
+        ["K", "web"],
+        ["i", ROOM],
+        ["k", "web"],
+      ],
+      "nope",
+      generateSecretKey(),
+    )
+    const good = sign([
+      ["I", ROOM],
+      ["K", "web"],
+      ["i", ROOM],
+      ["k", "web"],
+    ])
+    const seen: string[] = []
+    const capturedFilters: object[] = []
+    let closed = 0
+
+    const pool: PoolLike = {
+      subscribeMany(_relays, filter, opts) {
+        capturedFilters.push(filter)
+        opts.onevent(good)
+        opts.onevent(good)
+        opts.onevent({ ...good, sig: "00".repeat(64) })
+        opts.onevent(other)
+        return {
+          close() {
+            closed += 1
+          },
+        }
+      },
+      publish: () => [],
+    }
+
+    const sub = subscribeOwnComments(pool, ["wss://relay.example"], self, {
+      onevent(comment) {
+        seen.push(comment.id)
+      },
+    })
+    sub.close()
+
+    expect(seen).toEqual([good.id])
+    expect(capturedFilters).toEqual([{ kinds: [1111], authors: [self] }])
+    expect(closed).toBe(1)
   })
 })
