@@ -1,5 +1,7 @@
 import type { Event } from "nostr-tools/pure"
 import { KIND_COMMENT, parseComment, parseWebComment, type VerifiedComment, type WebComment } from "./events"
+import { collectOwnWebComments } from "./ownComments"
+import { ROOM_EVENT_CAP } from "./thread"
 
 export type RoomSub = {
   close: () => void
@@ -20,6 +22,10 @@ export type PoolLike = {
     opts: { onevent: (event: Event) => void },
   ) => RoomSub
   publish: (relays: string[], event: Event) => Promise<unknown>[]
+}
+
+export type OwnCommentQueryPool = {
+  querySync: (relays: string[], filter: object) => Promise<Event[]>
 }
 
 export function subscribeRoom(
@@ -69,6 +75,20 @@ export function subscribeOwnComments(
       sub.close()
     },
   }
+}
+
+export async function fetchOwnComments(
+  pool: OwnCommentQueryPool,
+  relays: string[],
+  pubkey: string,
+): Promise<WebComment[]> {
+  const self = pubkey.toLowerCase()
+  const events = await pool.querySync(relays, {
+    kinds: [KIND_COMMENT],
+    authors: [self],
+    limit: ROOM_EVENT_CAP,
+  })
+  return collectOwnWebComments(events, self)
 }
 
 export async function publishRoom(

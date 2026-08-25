@@ -66,10 +66,12 @@ export {
   type SocialSnapshot,
 } from "./social"
 export {
+  fetchOwnComments,
   publishRoom,
   subscribeOwnComments,
   subscribeRoom,
   type OwnCommentHandlers,
+  type OwnCommentQueryPool,
   type PoolLike,
   type RoomHandlers,
   type RoomSub,
