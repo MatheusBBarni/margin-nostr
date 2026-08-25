@@ -47,8 +47,9 @@ export function nest(comments: VerifiedComment[]): { roots: ThreadNode[]; orphan
 
 export type FilterMode = "follows" | "everyone"
 
-export function defaultFilterMode(follows: string[]): FilterMode {
-  return follows.length > 0 ? "follows" : "everyone"
+export function defaultFilterMode(follows: string[], stored?: FilterMode | null): FilterMode {
+  if (follows.length === 0) return "everyone"
+  return stored === "everyone" ? "everyone" : "follows"
 }
 
 export type FilterOptions = {
