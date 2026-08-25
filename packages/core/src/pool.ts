@@ -79,6 +79,26 @@ export function subscribeOwnComments(
   })
 }
 
+function recentWebCommentsFilter() {
+  return { kinds: [KIND_COMMENT], limit: ROOM_EVENT_CAP }
+}
+
+export function subscribeRecentWebComments(
+  pool: PoolLike,
+  relays: string[],
+  handlers: OwnCommentHandlers,
+): RoomSub {
+  const seen = new Set<string>()
+  return pool.subscribeMany(relays, recentWebCommentsFilter(), {
+    onevent(event: Event) {
+      const parsed = parseWebComment(event)
+      if (!parsed || seen.has(parsed.id)) return
+      seen.add(parsed.id)
+      handlers.onevent(parsed)
+    },
+  })
+}
+
 export async function fetchOwnComments(
   pool: OwnCommentQueryPool,
   relays: string[],
