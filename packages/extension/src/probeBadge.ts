@@ -3,6 +3,7 @@ import {
   badgeHits,
   badgeSocial,
   badgeState,
+  hydrateExtraRelays,
   hydrateMutes,
   hydrateNip65,
   readRelays,
@@ -47,8 +48,9 @@ async function probeTab(tabId: number, rawUrl: string | undefined): Promise<void
 
   const social = await loadBadgeSocial()
   const user65 = social.mode === "follows" ? await hydrateNip65(chromeKv, social.self) : null
+  const extraRelays = await hydrateExtraRelays(chromeKv)
   const pool = new SimplePool()
-  const relays = readRelays(user65 ?? undefined)
+  const relays = readRelays(user65 ?? undefined, extraRelays)
   const comments: VerifiedComment[] = []
   const seen = new Set<string>()
   let closed = false

@@ -84,8 +84,10 @@ export { createNip07Signer } from "./signers/nip07"
 export { createBunkerSigner } from "./signers/bunker"
 export {
   EXTENSION_SIGNER_IDS,
+  KNOWN_EXTENSION_SIGNER_IDS,
   createExtensionMessageSigner,
   detectExtensionSigner,
+  extensionSignerLabel,
 } from "./signers/extension-message"
 export type { ExtensionMessenger, Nip07Nostr, Signer, SignerId } from "./signers/types"
 export {

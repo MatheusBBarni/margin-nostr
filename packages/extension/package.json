@@ -10,11 +10,13 @@
     "postinstall": "wxt prepare"
   },
   "dependencies": {
+    "@heroui/react": "^3.2.4",
     "@margin/core": "workspace:*",
     "@margin/ui": "workspace:*",
     "nostr-tools": "^2.24.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "uqr": "^0.1.3"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.0",

@@ -1,11 +1,13 @@
 import {
   KV_KEYS,
   NormalizeError,
+  clearSessionSigner,
   createBunkerSigner,
   createExtensionMessageSigner,
   detectExtensionSigner,
   evictProfileCache,
   normalizeUrl,
+  parseStoredSigner,
   readRelays,
   type Signer,
   type StoredSigner,
@@ -28,12 +30,19 @@ function probeBadge() {
   void browser.runtime.sendMessage({ type: "probeBadge" }).catch(() => {})
 }
 
+function sendToExtension(id: string, message: { type: string; params: Record<string, unknown> }) {
+  return browser.runtime.sendMessage(id, message)
+}
+
 export function App() {
   const [tabUrl, setTabUrl] = useState<string | null>(null)
   const [pubkey, setPubkey] = useState<string | null>(null)
   const [pool, setPool] = useState<SimplePool | null>(null)
+  const [prefsEpoch, setPrefsEpoch] = useState(0)
+  const [signerEpoch, setSignerEpoch] = useState(0)
   const signerRef = useRef<Signer | null>(null)
   const user65Ref = useRef<ReturnType<typeof useRoomSession>["user65"]>(null)
+  const extraRelaysRef = useRef<string[]>([])
 
   const roomState = useMemo(() => {
     if (!tabUrl || isSkippableUrl(tabUrl)) return { status: "skippable" as const }
@@ -51,10 +60,12 @@ export function App() {
     pubkey,
     pool: pool as SessionPool | null,
     signerRef,
+    prefsEpoch,
     onAfterWrite: probeBadge,
     onSocialReady: probeBadge,
   })
   user65Ref.current = session.user65
+  extraRelaysRef.current = session.extraRelays
 
   const refreshTab = useCallback(async () => {
     const tabs = await browser.tabs.query({ active: true, currentWindow: true })
@@ -80,6 +91,22 @@ export function App() {
   }, [refreshTab])
 
   useEffect(() => {
+    const onChanged: Parameters<typeof browser.storage.onChanged.addListener>[0] = (changes, area) => {
+      if (area !== "local") return
+      if (changes[KV_KEYS.theme]) {
+        const theme = (changes[KV_KEYS.theme].newValue as ThemePreference | undefined) ?? "system"
+        applyTheme(theme)
+      }
+      if (changes[KV_KEYS.signer]) setSignerEpoch((n) => n + 1)
+      if (changes[KV_KEYS.mutes] || changes[KV_KEYS.defaultFilter] || changes[KV_KEYS.extraRelays]) {
+        setPrefsEpoch((n) => n + 1)
+      }
+    }
+    browser.storage.onChanged.addListener(onChanged)
+    return () => browser.storage.onChanged.removeListener(onChanged)
+  }, [])
+
+  useEffect(() => {
     if (!room) {
       setPool(null)
       return
@@ -87,21 +114,23 @@ export function App() {
     const next = new SimplePool()
     setPool(next)
     return () => {
-      next.close(readRelays(user65Ref.current ?? undefined))
+      next.close(readRelays(user65Ref.current ?? undefined, extraRelaysRef.current))
       setPool(null)
     }
   }, [room])
 
   useEffect(() => {
     void (async () => {
-      const stored = await chromeKv.get<StoredSigner>(KV_KEYS.signer)
-      if (!stored) return
+      const stored = parseStoredSigner(await chromeKv.get(KV_KEYS.signer))
+      if (!stored) {
+        await signerRef.current?.close?.()
+        signerRef.current = null
+        setPubkey(null)
+        return
+      }
       try {
         if (stored.method === "extension-message" && stored.extensionId) {
-          const signer = createExtensionMessageSigner(
-            (id, message) => browser.runtime.sendMessage(id, message),
-            stored.extensionId,
-          )
+          const signer = createExtensionMessageSigner(sendToExtension, stored.extensionId)
           signerRef.current = signer
           const hex = await signer.getPublicKey()
           await session.applyCachedSelf(hex)
@@ -124,10 +153,10 @@ export function App() {
         setPubkey(null)
       }
     })()
-  }, [pool, room, session.applyCachedSelf])
+  }, [pool, room, session.applyCachedSelf, signerEpoch])
 
   async function connectExtension() {
-    const found = await detectExtensionSigner((id, message) => browser.runtime.sendMessage(id, message))
+    const found = await detectExtensionSigner(sendToExtension)
     if (!found) {
       session.setError("No extension signer found. Connect a bunker or install nos2x/Alby.")
       return
@@ -166,8 +195,7 @@ export function App() {
     signerRef.current = null
     if (pubkey) evictProfileCache(pubkey)
     setPubkey(null)
-    await chromeKv.delete(KV_KEYS.signer)
-    await chromeKv.delete(KV_KEYS.selfProfile)
+    await clearSessionSigner(chromeKv)
   }
 
   if (roomState.status === "skippable") {

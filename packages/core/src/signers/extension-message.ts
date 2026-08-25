@@ -5,11 +5,26 @@ import type { ExtensionMessenger, Signer } from "./types"
 export const EXTENSION_SIGNER_IDS = {
   nos2x: {
     chromium: "kpgefcfmnafjgpblomihpgmejjdanjjp",
+    firefox: "{fdacee2c-bab4-490d-bc4b-ecdd03d5d68a}",
   },
   alby: {
     chromium: "iokeahhehimjnekafflcihljlcjccdbe",
+    firefox: "extension@getalby.com",
   },
 } as const
+
+export const KNOWN_EXTENSION_SIGNER_IDS = [
+  EXTENSION_SIGNER_IDS.nos2x.chromium,
+  EXTENSION_SIGNER_IDS.alby.chromium,
+  EXTENSION_SIGNER_IDS.nos2x.firefox,
+  EXTENSION_SIGNER_IDS.alby.firefox,
+] as const
+
+export function extensionSignerLabel(id: string): "nos2x" | "Alby" | "extension" {
+  if (id === EXTENSION_SIGNER_IDS.nos2x.chromium || id === EXTENSION_SIGNER_IDS.nos2x.firefox) return "nos2x"
+  if (id === EXTENSION_SIGNER_IDS.alby.chromium || id === EXTENSION_SIGNER_IDS.alby.firefox) return "Alby"
+  return "extension"
+}
 
 export function createExtensionMessageSigner(
   sendMessage: ExtensionMessenger,
@@ -40,10 +55,7 @@ export function createExtensionMessageSigner(
 
 export async function detectExtensionSigner(
   sendMessage: ExtensionMessenger,
-  ids: string[] = [
-    EXTENSION_SIGNER_IDS.nos2x.chromium,
-    EXTENSION_SIGNER_IDS.alby.chromium,
-  ],
+  ids: string[] = [...KNOWN_EXTENSION_SIGNER_IDS],
 ): Promise<{ signer: Signer; extensionId: string } | null> {
   for (const extensionId of ids) {
     try {

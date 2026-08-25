@@ -1,9 +1,11 @@
 import {
   KV_KEYS,
+  clearSessionSigner,
   createBunkerSigner,
   createNip07Signer,
   evictProfileCache,
   normalizeUrl,
+  parseStoredSigner,
   readRelays,
   type Signer,
   type StoredSigner,
@@ -80,7 +82,7 @@ export function Room() {
 
   useEffect(() => {
     void (async () => {
-      const stored = await localKv.get<StoredSigner>(KV_KEYS.signer)
+      const stored = parseStoredSigner(await localKv.get(KV_KEYS.signer))
       try {
         if (window.nostr) {
           const signer = createNip07Signer(window.nostr)
@@ -146,8 +148,7 @@ export function Room() {
     signerRef.current = null
     if (pubkey) evictProfileCache(pubkey)
     setPubkey(null)
-    await localKv.delete(KV_KEYS.signer)
-    await localKv.delete(KV_KEYS.selfProfile)
+    await clearSessionSigner(localKv)
   }
 
   if (!room) {

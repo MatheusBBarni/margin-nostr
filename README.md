@@ -160,7 +160,7 @@ Firefox:
 bun run --filter @margin/extension build:firefox
 ```
 
-The side panel follows the active tab URL. It does not inject into the page, so it cannot see a page-injected `window.nostr`. Use a bunker, or an extension signer that answers `sendMessage` (Alby, nos2x).
+The side panel follows the active tab URL. It does not inject into the page, so it cannot see a page-injected `window.nostr`. Use a bunker, or an extension signer that answers `sendMessage` (Alby, nos2x). The extension options page connects bunker / Amber / nos2x-Alby and edits mute, theme, default filter, and extra relays.
 
 ### Public site
 
