@@ -83,4 +83,34 @@ describe("shouldHandleComposeShortcut", () => {
       }),
     ).toBe(false)
   })
+
+  test("ignores c when Alt, Ctrl, or Meta is held", () => {
+    expect(
+      shouldHandleComposeShortcut({
+        key: "c",
+        altKey: true,
+        ctrlKey: false,
+        metaKey: false,
+        targetIsEditable: false,
+      }),
+    ).toBe(false)
+    expect(
+      shouldHandleComposeShortcut({
+        key: "c",
+        altKey: false,
+        ctrlKey: true,
+        metaKey: false,
+        targetIsEditable: false,
+      }),
+    ).toBe(false)
+    expect(
+      shouldHandleComposeShortcut({
+        key: "c",
+        altKey: false,
+        ctrlKey: false,
+        metaKey: true,
+        targetIsEditable: false,
+      }),
+    ).toBe(false)
+  })
 })
