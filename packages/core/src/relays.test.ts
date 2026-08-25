@@ -7,6 +7,7 @@ import {
   hydrateNip65,
   parseNip65,
   persistNip65,
+  parseExtraRelays,
   readRelays,
   writeRelays,
 } from "./relays"
@@ -110,5 +111,22 @@ describe("hydrateNip65 / persistNip65", () => {
     expect(await hydrateNip65(kv, alice)).toEqual(lists)
     expect(await hydrateNip65(kv, "cc".repeat(32))).toBeNull()
     expect(await hydrateNip65(memoryKv({ [KV_KEYS.nip65Cache]: { nope: true } }), alice)).toBeNull()
+  })
+})
+
+describe("parseExtraRelays", () => {
+  test("keeps unique wss urls, strips trailing slash, drops junk", () => {
+    expect(
+      parseExtraRelays([
+        "wss://extra.example/",
+        "wss://extra.example",
+        "wss://other.example",
+        "https://not-a-relay.example",
+        "nope",
+        1,
+        null,
+      ]),
+    ).toEqual(["wss://extra.example", "wss://other.example"])
+    expect(parseExtraRelays("bad")).toEqual([])
   })
 })
