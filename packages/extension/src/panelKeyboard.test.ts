@@ -71,4 +71,16 @@ describe("shouldHandleComposeShortcut", () => {
       }),
     ).toBe(true)
   })
+
+  test("ignores c while typing in a field", () => {
+    expect(
+      shouldHandleComposeShortcut({
+        key: "c",
+        altKey: false,
+        ctrlKey: false,
+        metaKey: false,
+        targetIsEditable: true,
+      }),
+    ).toBe(false)
+  })
 })
