@@ -5,6 +5,7 @@ import { BrowserRouter, Route, Routes } from "react-router"
 import { Layout } from "./Layout"
 import { Home } from "./pages/Home"
 import { HowItWorks } from "./pages/HowItWorks"
+import { Me } from "./pages/Me"
 import { Room } from "./pages/Room"
 import "./index.css"
 
@@ -20,6 +21,7 @@ createRoot(root).render(
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
+          <Route path="/me" element={<Me />} />
           <Route path="/u/*" element={<Room />} />
         </Route>
       </Routes>

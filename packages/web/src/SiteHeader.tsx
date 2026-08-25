@@ -2,7 +2,7 @@ import { AuthBar } from "@margin/ui"
 import { NavLink } from "react-router"
 import { useWebAuth } from "./WebAuth"
 
-const links = [
+const baseLinks = [
   { to: "/", label: "Home", end: true },
   { to: "/how-it-works", label: "How it works", end: true },
 ] as const
@@ -12,6 +12,9 @@ const focusRing =
 
 export function SiteHeader() {
   const { pubkey, profile, error, connectNip07, connectBunker, logout } = useWebAuth()
+  const links = pubkey
+    ? [...baseLinks, { to: "/me", label: "My comments", end: true } as const]
+    : baseLinks
 
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--background)]">
