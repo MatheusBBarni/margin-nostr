@@ -98,4 +98,13 @@ describe("defaultFilterMode", () => {
     expect(defaultFilterMode(["aa".repeat(32)])).toBe("follows")
     expect(defaultFilterMode([])).toBe("everyone")
   })
+
+  test("honors stored everyone only when a follow list exists", () => {
+    const follows = ["aa".repeat(32)]
+    expect(defaultFilterMode([], "follows")).toBe("everyone")
+    expect(defaultFilterMode([], "everyone")).toBe("everyone")
+    expect(defaultFilterMode(follows)).toBe("follows")
+    expect(defaultFilterMode(follows, "follows")).toBe("follows")
+    expect(defaultFilterMode(follows, "everyone")).toBe("everyone")
+  })
 })
