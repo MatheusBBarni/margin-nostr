@@ -1,3 +1,6 @@
+import { verifyEvent, type Event } from "nostr-tools/pure"
+import type { QueryPool } from "./profiles"
+
 export const CURATED_RELAYS = [
   "wss://relay.damus.io",
   "wss://nos.lol",
@@ -43,6 +46,23 @@ export function parseNip65(event: { tags: string[][] }): Nip65Lists {
   }
 
   return { read, write }
+}
+
+export async function fetchNip65(
+  pool: QueryPool,
+  relays: string[],
+  pubkey: string,
+): Promise<Nip65Lists | null> {
+  const self = pubkey.toLowerCase()
+  const events = await pool.querySync(relays, { kinds: [10002], authors: [self] })
+  let newest: Event | null = null
+  for (const raw of events) {
+    const event = raw as Event
+    if (event.kind !== 10002 || event.pubkey.toLowerCase() !== self) continue
+    if (!verifyEvent(event)) continue
+    if (!newest || event.created_at > newest.created_at) newest = event
+  }
+  return newest ? parseNip65(newest) : null
 }
 
 function unique(urls: string[]): string[] {
