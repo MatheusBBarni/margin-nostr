@@ -72,6 +72,7 @@ export {
 export {
   KV_KEYS,
   parseStoredSigner,
+  clearSessionSigner,
   type FilterPreference,
   type Kv,
   type SignerMethod,

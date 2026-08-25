@@ -36,6 +36,11 @@ export function parseStoredSigner(value: unknown): StoredSigner | null {
 export type ThemePreference = "light" | "dark" | "system"
 export type FilterPreference = "follows" | "everyone"
 
+export async function clearSessionSigner(kv: Kv): Promise<void> {
+  await kv.delete(KV_KEYS.signer)
+  await kv.delete(KV_KEYS.selfProfile)
+}
+
 export const KV_KEYS = {
   signer: "signer",
   mutes: "mutes",
