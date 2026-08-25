@@ -17,7 +17,15 @@ export function SiteHeader() {
           className={`justify-self-start flex min-h-11 items-center gap-2.5 text-[var(--foreground)] no-underline ${focusRing}`}
           to="/"
         >
-          <img alt="" aria-hidden="true" className="size-7 rounded-sm" height={28} src="/favicon.png" width={28} />
+          <img
+            alt=""
+            aria-hidden="true"
+            className="size-7 rounded-sm"
+            decoding="async"
+            height={28}
+            src="/logo-mark.png"
+            width={28}
+          />
           <span className="font-mono text-xs tracking-[0.18em]">MARGIN</span>
         </NavLink>
         <nav aria-label="Site" className="flex items-center gap-1">

@@ -61,6 +61,7 @@ done
 
 cp "$ext_public/icon-16.png" "$web_public/favicon-16.png"
 cp "$ext_public/icon-32.png" "$web_public/favicon.png"
+export_png24 "$tmp/minimal.png" 128 "$web_public/logo-mark.png"
 export_png24 "$tmp/minimal.png" 180 "$web_public/apple-touch-icon.png"
 
 magick "$full" \
@@ -71,4 +72,4 @@ magick "$full" \
   "PNG24:${web_public}/logo-full.png"
 
 echo "wrote:"
-identify "$ext_public"/icon-*.png "$web_public"/favicon*.png "$web_public"/apple-touch-icon.png "$web_public"/logo-full.png
+identify "$ext_public"/icon-*.png "$web_public"/favicon*.png "$web_public"/logo-mark.png "$web_public"/apple-touch-icon.png "$web_public"/logo-full.png
