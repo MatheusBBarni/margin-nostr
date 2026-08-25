@@ -1,10 +1,10 @@
 import {
   KV_KEYS,
+  badgeHits,
+  badgeSocial,
   badgeState,
-  countFollowsHits,
   hydrateMutes,
   hydrateNip65,
-  parseFollowsCache,
   readRelays,
   subscribeRoom,
   type StoredSigner,
@@ -28,23 +28,11 @@ function abortProbe(tabId: number): void {
   probes.delete(tabId)
 }
 
-async function badgeContext(): Promise<{
-  follows: Set<string>
-  self?: string
-  muted: Set<string>
-  nip65Self?: string
-}> {
-  const muted = new Set(await hydrateMutes(chromeKv))
+async function loadBadgeSocial() {
+  const mutes = await hydrateMutes(chromeKv)
   const signer = await chromeKv.get<StoredSigner>(KV_KEYS.signer)
-  if (!signer) return { follows: new Set(), muted }
-  const cache = parseFollowsCache(await chromeKv.get(KV_KEYS.followsCache))
-  if (!cache) return { follows: new Set(), muted }
-  return {
-    follows: new Set(cache.ids),
-    self: cache.pubkey,
-    muted,
-    nip65Self: cache.pubkey,
-  }
+  const cache = await chromeKv.get(KV_KEYS.followsCache)
+  return badgeSocial(signer, cache, mutes)
 }
 
 async function probeTab(tabId: number, rawUrl: string | undefined): Promise<void> {
@@ -57,8 +45,8 @@ async function probeTab(tabId: number, rawUrl: string | undefined): Promise<void
     return
   }
 
-  const context = await badgeContext()
-  const user65 = context.nip65Self ? await hydrateNip65(chromeKv, context.nip65Self) : null
+  const social = await loadBadgeSocial()
+  const user65 = social.mode === "follows" ? await hydrateNip65(chromeKv, social.self) : null
   const pool = new SimplePool()
   const relays = readRelays(user65 ?? undefined)
   const comments: VerifiedComment[] = []
@@ -66,15 +54,8 @@ async function probeTab(tabId: number, rawUrl: string | undefined): Promise<void
   let closed = false
 
   const paint = () => {
-    const everyoneHits = comments.length
-    const followsHits = context.self
-      ? countFollowsHits(comments, {
-          follows: context.follows,
-          self: context.self,
-          muted: context.muted,
-        })
-      : 0
-    void paintTabBadge(tabId, badgeState(followsHits, everyoneHits))
+    const hits = badgeHits(comments, social)
+    void paintTabBadge(tabId, badgeState(hits.followsHits, hits.everyoneHits))
   }
 
   const stop = (shouldPaint: boolean) => {

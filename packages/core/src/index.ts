@@ -47,7 +47,18 @@ export {
   removeMute,
 } from "./mutes"
 export { badgeState, countFollowsHits, type BadgeState } from "./badge"
-export { readSocial, refreshSocial, type SocialSnapshot } from "./social"
+export {
+  badgeHits,
+  badgeSocial,
+  createCommentIngest,
+  mutePubkey,
+  readSocial,
+  refreshSocial,
+  relayListKey,
+  unmutePubkey,
+  type BadgeSocial,
+  type SocialSnapshot,
+} from "./social"
 export {
   publishRoom,
   subscribeRoom,

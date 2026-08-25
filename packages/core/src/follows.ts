@@ -1,7 +1,7 @@
-import { verifyEvent, type Event } from "nostr-tools/pure"
 import { KV_KEYS, type Kv } from "./kv"
 import type { QueryPool } from "./profiles"
 import { PUBKEY_HEX, uniquePubkeys } from "./pubkey"
+import { pickNewestVerified } from "./replaceable"
 
 export type FollowsCache = {
   pubkey: string
@@ -21,13 +21,7 @@ export async function fetchFollows(
 ): Promise<string[]> {
   const self = pubkey.toLowerCase()
   const events = await pool.querySync(relays, { kinds: [3], authors: [self] })
-  let newest: Event | null = null
-  for (const raw of events) {
-    const event = raw as Event
-    if (event.kind !== 3 || event.pubkey.toLowerCase() !== self) continue
-    if (!verifyEvent(event)) continue
-    if (!newest || event.created_at > newest.created_at) newest = event
-  }
+  const newest = pickNewestVerified(events, 3, self)
   return newest ? parseFollows(newest) : []
 }
 

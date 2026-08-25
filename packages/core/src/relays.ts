@@ -1,7 +1,7 @@
-import { verifyEvent, type Event } from "nostr-tools/pure"
 import { KV_KEYS, type Kv } from "./kv"
 import type { QueryPool } from "./profiles"
 import { PUBKEY_HEX } from "./pubkey"
+import { pickNewestVerified } from "./replaceable"
 
 export const CURATED_RELAYS = [
   "wss://relay.damus.io",
@@ -64,13 +64,7 @@ export async function fetchNip65(
 ): Promise<Nip65Lists | null> {
   const self = pubkey.toLowerCase()
   const events = await pool.querySync(relays, { kinds: [10002], authors: [self] })
-  let newest: Event | null = null
-  for (const raw of events) {
-    const event = raw as Event
-    if (event.kind !== 10002 || event.pubkey.toLowerCase() !== self) continue
-    if (!verifyEvent(event)) continue
-    if (!newest || event.created_at > newest.created_at) newest = event
-  }
+  const newest = pickNewestVerified(events, 10002, self)
   return newest ? parseNip65(newest) : null
 }
 
