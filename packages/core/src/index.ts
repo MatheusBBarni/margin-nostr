@@ -71,6 +71,7 @@ export {
 } from "./pool"
 export {
   KV_KEYS,
+  parseStoredSigner,
   type FilterPreference,
   type Kv,
   type SignerMethod,

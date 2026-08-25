@@ -13,6 +13,26 @@ export type StoredSigner = {
   extensionId?: string
 }
 
+export function parseStoredSigner(value: unknown): StoredSigner | null {
+  if (!value || typeof value !== "object") return null
+  const record = value as Record<string, unknown>
+  if (record.method === "bunker") {
+    if (typeof record.bunkerPointer !== "string" || !record.bunkerPointer) return null
+    if (typeof record.clientSkHex !== "string" || !record.clientSkHex) return null
+    return {
+      method: "bunker",
+      bunkerPointer: record.bunkerPointer,
+      clientSkHex: record.clientSkHex,
+    }
+  }
+  if (record.method === "extension-message") {
+    if (typeof record.extensionId !== "string" || !record.extensionId) return null
+    return { method: "extension-message", extensionId: record.extensionId }
+  }
+  if (record.method === "nip07") return { method: "nip07" }
+  return null
+}
+
 export type ThemePreference = "light" | "dark" | "system"
 export type FilterPreference = "follows" | "everyone"
 
