@@ -118,4 +118,34 @@ describe("collectRecentWebComments", () => {
     expect(capped[0]?.content).toBe(`n${ROOM_EVENT_CAP}`)
     expect(capped.some((comment) => comment.content === "n0")).toBe(false)
   })
+
+  test("collapses two raw I/i values that normalize to the same room", () => {
+    const alice = generateSecretKey()
+    const raw = "http://www.Example.com/a//b/?utm_source=x&id=1#frag"
+    const normalized = "https://example.com/a/b?id=1"
+    const first = sign(alice, {
+      created_at: 10,
+      content: "raw",
+      tags: [
+        ["I", raw],
+        ["K", "web"],
+        ["i", raw],
+        ["k", "web"],
+      ],
+    })
+    const second = sign(alice, {
+      created_at: 20,
+      content: "normalized",
+      tags: [
+        ["I", normalized],
+        ["K", "web"],
+        ["i", normalized],
+        ["k", "web"],
+      ],
+    })
+
+    expect(rankRooms(collectRecentWebComments([first, second]))).toEqual([
+      { roomUrl: normalized, commentCount: 2, lastActivityAt: 20 },
+    ])
+  })
 })
