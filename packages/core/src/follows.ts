@@ -65,3 +65,19 @@ export async function hydrateFollows(kv: Kv, pubkey: string): Promise<string[] |
   if (!stored || stored.pubkey !== pubkey.toLowerCase()) return null
   return stored.ids
 }
+
+export async function persistFollows(kv: Kv, pubkey: string, ids: string[]): Promise<void> {
+  const unique: string[] = []
+  const seen = new Set<string>()
+  for (const id of ids) {
+    const hex = id.toLowerCase()
+    if (!PUBKEY_HEX.test(hex) || seen.has(hex)) continue
+    seen.add(hex)
+    unique.push(hex)
+  }
+  await kv.set<FollowsCache>(KV_KEYS.followsCache, {
+    pubkey: pubkey.toLowerCase(),
+    ids: unique,
+    fetchedAt: Date.now(),
+  })
+}
