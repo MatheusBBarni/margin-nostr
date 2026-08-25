@@ -166,4 +166,19 @@ describe("parseWebComment", () => {
       ),
     ).toBeNull()
   })
+
+  test("sets roomUrl to normalizeUrl of I or i, not the raw tag", () => {
+    const raw = "http://www.Example.com/a//b/?utm_source=x&id=1#frag"
+    const event = sign({
+      tags: [
+        ["I", raw],
+        ["K", "web"],
+        ["i", raw],
+        ["k", "web"],
+      ],
+    })
+    const parsed = parseWebComment(event)
+    expect(parsed?.roomUrl).toBe("https://example.com/a/b?id=1")
+    expect(parsed?.roomUrl).not.toBe(raw)
+  })
 })
