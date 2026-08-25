@@ -3,6 +3,7 @@ import { finalizeEvent, generateSecretKey, getPublicKey } from "nostr-tools/pure
 import { KIND_COMMENT } from "./events"
 import {
   fetchOwnComments,
+  fetchRecentWebComments,
   publishRoom,
   subscribeOwnComments,
   subscribeRecentWebComments,
@@ -243,5 +244,45 @@ describe("subscribeRecentWebComments", () => {
     expect(seen).toEqual([good.id, other.id])
     expect(capturedFilters).toEqual([{ kinds: [1111], limit: 200 }])
     expect(closed).toBe(1)
+  })
+})
+
+describe("fetchRecentWebComments", () => {
+  test("querySyncs kind 1111 with limit 200 and returns collected comments", async () => {
+    const good = sign([
+      ["I", ROOM],
+      ["K", "web"],
+      ["i", ROOM],
+      ["k", "web"],
+    ])
+    const other = sign(
+      [
+        ["I", ROOM],
+        ["K", "web"],
+        ["i", ROOM],
+        ["k", "web"],
+      ],
+      "also",
+      generateSecretKey(),
+    )
+    const nonWeb = sign([
+      ["I", ROOM],
+      ["i", ROOM],
+    ])
+    let captured: object | undefined
+
+    const comments = await fetchRecentWebComments(
+      {
+        async querySync(_relays, filter) {
+          captured = filter
+          return [nonWeb, good, good, { ...good, sig: "00".repeat(64) }, other]
+        },
+      },
+      ["wss://relay.example"],
+    )
+
+    expect(captured).toEqual({ kinds: [1111], limit: 200 })
+    expect(comments.map((comment) => comment.id)).toEqual([good.id, other.id])
+    expect(comments[0]?.roomUrl).toBe(ROOM)
   })
 })
