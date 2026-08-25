@@ -4,7 +4,6 @@ import { PUBKEY_HEX } from "./pubkey"
 import { pickNewestVerified } from "./replaceable"
 
 export const CURATED_RELAYS = [
-  "wss://relay.damus.io",
   "wss://nos.lol",
   "wss://relay.primal.net",
   "wss://nostr.oxtr.dev",
