@@ -212,7 +212,21 @@ export function App() {
   }, [pool, room, session.applyCachedSelf, signerEpoch])
 
   useEffect(() => {
-    const markMoved = () => {
+    const markMoved = (event: Event) => {
+      if (event instanceof KeyboardEvent) {
+        if (
+          shouldHandleComposeShortcut({
+            key: event.key,
+            altKey: event.altKey,
+            ctrlKey: event.ctrlKey,
+            metaKey: event.metaKey,
+            targetIsEditable: targetIsEditable(event.target),
+          })
+        ) {
+          return
+        }
+        if (event.key !== "Tab" && event.key.length !== 1) return
+      }
       userMovedFocusRef.current = true
     }
     document.addEventListener("pointerdown", markMoved)
@@ -261,8 +275,10 @@ export function App() {
       ) {
         return
       }
+      const target = decideFocusTarget(focusStateRef.current)
+      if (target === "none" || target === "wait") return
       event.preventDefault()
-      landFocus(decideFocusTarget(focusStateRef.current))
+      landFocus(target)
     }
     document.addEventListener("keydown", onKeyDown)
     return () => {
