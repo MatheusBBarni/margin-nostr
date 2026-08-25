@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { decidePanelCommand } from "./panelKeyboard"
+import { decideFocusTarget, decidePanelCommand } from "./panelKeyboard"
 
 describe("decidePanelCommand", () => {
   test("opens the panel when the command fires and the panel is closed", () => {
@@ -13,5 +13,13 @@ describe("decidePanelCommand", () => {
 
   test("focuses the open panel when the command fires and close is unavailable", () => {
     expect(decidePanelCommand({ open: true, canClose: false })).toBe("focus")
+  })
+})
+
+describe("decideFocusTarget", () => {
+  test("focuses compose when the signer is ready, connected, and the room is focusable", () => {
+    expect(
+      decideFocusTarget({ signerReady: true, hasSigner: true, roomFocusable: true }),
+    ).toBe("compose")
   })
 })
