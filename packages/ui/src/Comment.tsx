@@ -94,7 +94,7 @@ export function Comment({ node, profiles, self, onReply, onMute }: Props) {
             </Button>
             <a
               aria-label="Open on njump"
-              className="button button--sm button--tertiary"
+              className="button button--sm button--tertiary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus)]"
               href={commentViewerUrl(comment)}
               rel="noopener"
               target="_blank"
