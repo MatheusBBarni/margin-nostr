@@ -1,22 +1,10 @@
-import {
-  KV_KEYS,
-  clearSessionSigner,
-  createBunkerSigner,
-  createNip07Signer,
-  evictProfileCache,
-  normalizeUrl,
-  parseStoredSigner,
-  readRelays,
-  type Signer,
-  type StoredSigner,
-  type ThemePreference,
-} from "@margin/core"
+import { KV_KEYS, NormalizeError, normalizeUrl, readRelays, type ThemePreference } from "@margin/core"
 import { Thread, applyTheme, useRoomSession, type SessionPool } from "@margin/ui"
 import { SimplePool } from "nostr-tools"
-import { bytesToHex, hexToBytes } from "nostr-tools/utils"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useParams } from "react-router"
 import { localKv } from "../localKv"
+import { useWebAuth } from "../WebAuth"
 
 const PUBLIC_ORIGIN = import.meta.env.VITE_PUBLIC_ORIGIN ?? window.location.origin
 
@@ -26,6 +14,7 @@ function permalinkFor(normalized: string): string {
 
 export function Room() {
   const params = useParams()
+  const { pubkey, signerRef } = useWebAuth()
   const raw = useMemo(() => {
     const splat = params["*"] ?? ""
     if (!splat) return ""
@@ -36,9 +25,7 @@ export function Room() {
       return ""
     }
   }, [params])
-  const [pubkey, setPubkey] = useState<string | null>(null)
   const [pool, setPool] = useState<SimplePool | null>(null)
-  const signerRef = useRef<Signer | null>(null)
   const user65Ref = useRef<ReturnType<typeof useRoomSession>["user65"]>(null)
 
   const room = useMemo(() => {
@@ -81,75 +68,8 @@ export function Room() {
   }, [room])
 
   useEffect(() => {
-    void (async () => {
-      const stored = parseStoredSigner(await localKv.get(KV_KEYS.signer))
-      try {
-        if (window.nostr) {
-          const signer = createNip07Signer(window.nostr)
-          signerRef.current = signer
-          const hex = await signer.getPublicKey()
-          await session.applyCachedSelf(hex)
-          setPubkey(hex)
-          await localKv.set<StoredSigner>(KV_KEYS.signer, { method: "nip07" })
-          return
-        }
-        if (stored?.method === "bunker" && stored.bunkerPointer && stored.clientSkHex && pool) {
-          const { signer } = await createBunkerSigner({
-            bunkerUri: stored.bunkerPointer,
-            clientSk: hexToBytes(stored.clientSkHex),
-            pool,
-          })
-          signerRef.current = signer
-          const hex = await signer.getPublicKey()
-          await session.applyCachedSelf(hex)
-          setPubkey(hex)
-        }
-      } catch {
-        signerRef.current = null
-        setPubkey(null)
-      }
-    })()
-  }, [pool, room, session.applyCachedSelf])
-
-  async function connectNip07() {
-    if (!window.nostr) {
-      session.setError("No NIP-07 signer on this page.")
-      return
-    }
-    const signer = createNip07Signer(window.nostr)
-    signerRef.current = signer
-    const hex = await signer.getPublicKey()
-    await session.applyCachedSelf(hex)
-    setPubkey(hex)
-    await localKv.set<StoredSigner>(KV_KEYS.signer, { method: "nip07" })
-    session.setError(null)
-  }
-
-  async function connectBunker() {
-    const uri = window.prompt("Paste a bunker:// URI")
-    if (!uri) return
-    const active = pool ?? new SimplePool()
-    if (!pool) setPool(active)
-    const { signer, clientSk } = await createBunkerSigner({ bunkerUri: uri, pool: active })
-    signerRef.current = signer
-    const hex = await signer.getPublicKey()
-    await session.applyCachedSelf(hex)
-    setPubkey(hex)
-    await localKv.set<StoredSigner>(KV_KEYS.signer, {
-      method: "bunker",
-      bunkerPointer: uri,
-      clientSkHex: bytesToHex(clientSk),
-    })
-    session.setError(null)
-  }
-
-  async function logout() {
-    await signerRef.current?.close?.()
-    signerRef.current = null
-    if (pubkey) evictProfileCache(pubkey)
-    setPubkey(null)
-    await clearSessionSigner(localKv)
-  }
+    if (pubkey) void session.applyCachedSelf(pubkey)
+  }, [pubkey, session.applyCachedSelf])
 
   if (!room) {
     return (
@@ -178,9 +98,7 @@ export function Room() {
         onCancelReply={session.onCancelReply}
         pubkey={pubkey}
         hasFollows={session.hasFollows}
-        onConnectNip07={() => void connectNip07()}
-        onConnectBunker={() => void connectBunker()}
-        onLogout={() => void logout()}
+        showAuth={false}
         errorMessage={session.error}
       />
     </div>

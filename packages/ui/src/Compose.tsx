@@ -1,5 +1,5 @@
 import { Button, TextArea } from "@heroui/react"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import type { VerifiedComment } from "@margin/core"
 
 type Props = {
@@ -12,6 +12,13 @@ type Props = {
 export function Compose({ disabled, replyTo, onSubmit, onCancelReply }: Props) {
   const [text, setText] = useState("")
   const [pending, setPending] = useState(false)
+  const formRef = useRef<HTMLFormElement>(null)
+
+  useEffect(() => {
+    if (!replyTo) return
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+    formRef.current?.querySelector("textarea")?.focus()
+  }, [replyTo])
 
   async function handleSubmit() {
     const next = text.trim()
@@ -27,7 +34,8 @@ export function Compose({ disabled, replyTo, onSubmit, onCancelReply }: Props) {
 
   return (
     <form
-      className="flex flex-col gap-2"
+      ref={formRef}
+      className="flex scroll-mt-20 flex-col gap-2"
       onSubmit={(event) => {
         event.preventDefault()
         void handleSubmit()

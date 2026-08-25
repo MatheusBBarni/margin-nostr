@@ -36,6 +36,12 @@ describe("parseStoredSigner", () => {
         bunkerPointer: "bunker://abc",
       }),
     ).toBeNull()
+    expect(
+      parseStoredSigner({
+        method: "nip07",
+        pubkey: "AA".repeat(32),
+      }),
+    ).toEqual({ method: "nip07", pubkey: "aa".repeat(32) })
   })
 })
 

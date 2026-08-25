@@ -1,4 +1,6 @@
+import { AuthBar } from "@margin/ui"
 import { NavLink } from "react-router"
+import { useWebAuth } from "./WebAuth"
 
 const links = [
   { to: "/", label: "Home", end: true },
@@ -9,12 +11,14 @@ const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus)]"
 
 export function SiteHeader() {
+  const { pubkey, profile, error, connectNip07, connectBunker, logout } = useWebAuth()
+
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--background)]">
-      <div className="mx-auto grid h-16 max-w-xl grid-cols-[1fr_auto_1fr] items-center px-6 sm:px-8">
+      <div className="mx-auto flex h-16 w-full max-w-5xl items-center gap-4 px-6 sm:px-8">
         <NavLink
           aria-label="Margin home"
-          className={`justify-self-start flex min-h-11 items-center gap-2.5 text-[var(--foreground)] no-underline ${focusRing}`}
+          className={`flex shrink-0 items-center gap-2.5 text-[var(--foreground)] no-underline ${focusRing}`}
           to="/"
         >
           <img
@@ -28,13 +32,13 @@ export function SiteHeader() {
           />
           <span className="font-mono text-xs tracking-[0.18em]">MARGIN</span>
         </NavLink>
-        <nav aria-label="Site" className="flex items-center gap-1">
+        <nav aria-label="Site" className="flex shrink-0 items-center gap-1">
           {links.map((link) => (
             <NavLink
               key={link.to}
               className={({ isActive }) =>
                 [
-                  "relative inline-flex min-h-11 cursor-pointer items-center px-3 text-sm no-underline transition-colors duration-200",
+                  "relative inline-flex min-h-11 items-center px-3 text-sm whitespace-nowrap no-underline transition-colors duration-200",
                   isActive
                     ? "text-[var(--foreground)] after:absolute after:inset-x-3 after:bottom-1.5 after:h-px after:bg-[var(--foreground)]"
                     : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]",
@@ -48,8 +52,20 @@ export function SiteHeader() {
             </NavLink>
           ))}
         </nav>
-        <span aria-hidden="true" />
+        <AuthBar
+          className="ml-auto shrink-0"
+          pubkey={pubkey}
+          profile={profile}
+          onConnectNip07={() => void connectNip07()}
+          onConnectBunker={() => void connectBunker()}
+          onLogout={() => void logout()}
+        />
       </div>
+      {error ? (
+        <p className="mx-auto max-w-5xl px-6 pb-2 text-sm text-[var(--danger)] sm:px-8" role="alert">
+          {error}
+        </p>
+      ) : null}
     </header>
   )
 }

@@ -27,9 +27,10 @@ type Props = {
   onCancelReply?: () => void
   pubkey: string | null
   hasFollows?: boolean
+  showAuth?: boolean
   onConnectNip07?: () => void
-  onConnectBunker: () => void
-  onLogout: () => void
+  onConnectBunker?: () => void
+  onLogout?: () => void
   errorMessage?: string | null
 }
 
@@ -79,6 +80,7 @@ export function Thread({
   onCancelReply,
   pubkey,
   hasFollows = false,
+  showAuth = true,
   onConnectNip07,
   onConnectBunker,
   onLogout,
@@ -86,7 +88,7 @@ export function Thread({
 }: Props) {
   const list =
     nodes.length === 0 ? null : (
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-8">
         {nodes.map((node) => (
           <Comment
             key={node.comment.id}
@@ -104,13 +106,15 @@ export function Thread({
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 bg-[var(--background)] p-4 text-[var(--foreground)]">
       <Toast.Provider placement="bottom" width="min(360px, calc(100% - 24px))" />
-      <AuthBar
-        pubkey={pubkey}
-        profile={pubkey ? profiles.get(pubkey) : undefined}
-        onConnectNip07={onConnectNip07}
-        onConnectBunker={onConnectBunker}
-        onLogout={onLogout}
-      />
+      {showAuth && onConnectBunker && onLogout ? (
+        <AuthBar
+          pubkey={pubkey}
+          profile={pubkey ? profiles.get(pubkey) : undefined}
+          onConnectNip07={onConnectNip07}
+          onConnectBunker={onConnectBunker}
+          onLogout={onLogout}
+        />
+      ) : null}
       {errorMessage ? (
         <p role="alert" className="text-sm text-[var(--danger)]">
           {errorMessage}
