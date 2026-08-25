@@ -56,7 +56,7 @@ Wiring (not unit-tested this cycle):
 5. Signer ready + signed out + room → auth
 6. Signer not ready → wait
 7. Non-room view → none
-8. User already moved focus → do not apply open-focus
+8. Pointer / Tab / typed character counts as a user focus move; bare `c` does not
 9. Bare `c` outside a field → handle
 10. `c` while typing → ignore
 11. `c` with Alt/Ctrl/Meta → ignore
