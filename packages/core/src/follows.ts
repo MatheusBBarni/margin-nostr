@@ -1,3 +1,6 @@
+import { verifyEvent, type Event } from "nostr-tools/pure"
+import type { QueryPool } from "./profiles"
+
 const PUBKEY_HEX = /^[0-9a-f]{64}$/i
 
 export function parseFollows(event: { kind: number; tags: string[][] }): string[] {
@@ -13,4 +16,21 @@ export function parseFollows(event: { kind: number; tags: string[][] }): string[
     ids.push(hex)
   }
   return ids
+}
+
+export async function fetchFollows(
+  pool: QueryPool,
+  relays: string[],
+  pubkey: string,
+): Promise<string[]> {
+  const self = pubkey.toLowerCase()
+  const events = await pool.querySync(relays, { kinds: [3], authors: [self] })
+  let newest: Event | null = null
+  for (const raw of events) {
+    const event = raw as Event
+    if (event.kind !== 3 || event.pubkey.toLowerCase() !== self) continue
+    if (!verifyEvent(event)) continue
+    if (!newest || event.created_at > newest.created_at) newest = event
+  }
+  return newest ? parseFollows(newest) : []
 }
