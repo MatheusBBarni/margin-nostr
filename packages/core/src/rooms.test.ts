@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test"
+import { finalizeEvent, generateSecretKey } from "nostr-tools/pure"
 import type { WebComment } from "./events"
-import { rankRooms } from "./rooms"
+import { collectRecentWebComments, rankRooms } from "./rooms"
+import { ROOM_EVENT_CAP } from "./thread"
 
 const ROOM = "https://example.com/x"
 
@@ -50,5 +52,70 @@ describe("rankRooms", () => {
       { roomUrl: busy, commentCount: 2, lastActivityAt: 20 },
       { roomUrl: quiet, commentCount: 1, lastActivityAt: 50 },
     ])
+  })
+})
+
+function sign(
+  sk: Uint8Array,
+  partial: {
+    created_at?: number
+    content?: string
+    kind?: number
+    tags?: string[][]
+  } = {},
+) {
+  return finalizeEvent(
+    {
+      kind: partial.kind ?? 1111,
+      created_at: partial.created_at ?? 1_700_000_000,
+      content: partial.content ?? "Nice article!",
+      tags: partial.tags ?? [
+        ["I", ROOM],
+        ["K", "web"],
+        ["i", ROOM],
+        ["k", "web"],
+      ],
+    },
+    sk,
+  )
+}
+
+describe("collectRecentWebComments", () => {
+  test("drops junk, keeps any pubkey, dedups by id, and keeps the newest 200", () => {
+    const alice = generateSecretKey()
+    const bob = generateSecretKey()
+    const oldest = sign(alice, { created_at: 10, content: "oldest" })
+    const middle = sign(bob, { created_at: 20, content: "middle" })
+    const newest = sign(alice, { created_at: 30, content: "newest" })
+    const badSig = { ...newest, sig: "00".repeat(64) }
+    const nonWeb = sign(alice, {
+      created_at: 40,
+      content: "non-web",
+      tags: [
+        ["I", ROOM],
+        ["i", ROOM],
+      ],
+    })
+    const badPointer = sign(alice, {
+      created_at: 50,
+      content: "bad pointer",
+      tags: [
+        ["I", "not-a-url"],
+        ["K", "web"],
+        ["i", "not-a-url"],
+        ["k", "web"],
+      ],
+    })
+
+    const mixed = collectRecentWebComments([oldest, newest, newest, badSig, nonWeb, badPointer, middle])
+    expect(mixed.map((comment) => comment.content)).toEqual(["newest", "middle", "oldest"])
+
+    const many = Array.from({ length: ROOM_EVENT_CAP + 1 }, (_, index) =>
+      sign(alice, { created_at: index, content: `n${index}` }),
+    )
+    const capped = collectRecentWebComments(many)
+    expect(capped).toHaveLength(ROOM_EVENT_CAP)
+    expect(capped[0]?.content).toBe(`n${ROOM_EVENT_CAP}`)
+    expect(capped.some((comment) => comment.content === "n0")).toBe(false)
   })
 })
