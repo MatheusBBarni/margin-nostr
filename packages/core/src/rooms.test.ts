@@ -148,4 +148,29 @@ describe("collectRecentWebComments", () => {
       { roomUrl: normalized, commentCount: 2, lastActivityAt: 20 },
     ])
   })
+
+  test("counts a NIP-22 reply toward the same room as a top-level", () => {
+    const alice = generateSecretKey()
+    const top = sign(alice, { created_at: 10, content: "top" })
+    const parentId = top.id
+    const parentPubkey = top.pubkey
+    const reply = sign(alice, {
+      created_at: 20,
+      content: "reply",
+      tags: [
+        ["I", ROOM],
+        ["K", "web"],
+        ["e", parentId, "", parentPubkey],
+        ["k", "1111"],
+        ["p", parentPubkey, ""],
+      ],
+    })
+
+    const comments = collectRecentWebComments([top, reply])
+    expect(comments).toHaveLength(2)
+    expect(comments.some((comment) => comment.parentId === parentId)).toBe(true)
+    expect(rankRooms(comments)).toEqual([
+      { roomUrl: ROOM, commentCount: 2, lastActivityAt: 20 },
+    ])
+  })
 })
