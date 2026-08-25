@@ -37,3 +37,13 @@ export function shouldApplyOpenFocus(input: {
 }): boolean {
   return !input.userHasMovedFocus
 }
+
+export function shouldHandleComposeShortcut(_input: {
+  key: string
+  altKey: boolean
+  ctrlKey: boolean
+  metaKey: boolean
+  targetIsEditable: boolean
+}): boolean {
+  return true
+}
