@@ -37,4 +37,13 @@ describe("decideFocusTarget", () => {
       decideFocusTarget({ signerReady: false, hasSigner: true, roomFocusable: true }),
     ).toBe("wait")
   })
+
+  test("focuses none when the signer is ready and the view is not a room", () => {
+    expect(
+      decideFocusTarget({ signerReady: true, hasSigner: true, roomFocusable: false }),
+    ).toBe("none")
+    expect(
+      decideFocusTarget({ signerReady: true, hasSigner: false, roomFocusable: false }),
+    ).toBe("none")
+  })
 })
