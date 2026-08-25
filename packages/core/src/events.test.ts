@@ -181,4 +181,23 @@ describe("parseWebComment", () => {
     expect(parsed?.roomUrl).toBe("https://example.com/a/b?id=1")
     expect(parsed?.roomUrl).not.toBe(raw)
   })
+
+  test("classifies a NIP-22 reply with parentId and the same roomUrl", () => {
+    const parentId = "aa".repeat(32)
+    const parentPubkey = "bb".repeat(32)
+    const reply = sign({
+      content: "a reply",
+      tags: [
+        ["I", ROOM],
+        ["K", "web"],
+        ["e", parentId, "", parentPubkey],
+        ["k", "1111"],
+        ["p", parentPubkey, ""],
+      ],
+    })
+    const parsed = parseWebComment(reply)
+    expect(parsed?.parentId).toBe(parentId)
+    expect(parsed?.roomUrl).toBe(ROOM)
+    expect(parsed?.content).toBe("a reply")
+  })
 })
