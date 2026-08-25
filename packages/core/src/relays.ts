@@ -1,5 +1,8 @@
 import { verifyEvent, type Event } from "nostr-tools/pure"
+import { KV_KEYS, type Kv } from "./kv"
 import type { QueryPool } from "./profiles"
+
+const PUBKEY_HEX = /^[0-9a-f]{64}$/i
 
 export const CURATED_RELAYS = [
   "wss://relay.damus.io",
@@ -12,6 +15,13 @@ export const CURATED_RELAYS = [
 export type Nip65Lists = {
   read: string[]
   write: string[]
+}
+
+export type Nip65Cache = {
+  pubkey: string
+  read: string[]
+  write: string[]
+  fetchedAt: number
 }
 
 export function normalizeRelayUrl(raw: string): string | null {
@@ -83,4 +93,33 @@ export function readRelays(user65?: Nip65Lists): string[] {
 
 export function writeRelays(user65?: Nip65Lists): string[] {
   return unique([...CURATED_RELAYS, ...(user65?.write ?? [])])
+}
+
+export function parseNip65Cache(value: unknown): Nip65Cache | null {
+  if (!value || typeof value !== "object") return null
+  const record = value as Record<string, unknown>
+  if (typeof record.pubkey !== "string" || !PUBKEY_HEX.test(record.pubkey)) return null
+  if (typeof record.fetchedAt !== "number" || !Number.isFinite(record.fetchedAt)) return null
+  if (!Array.isArray(record.read) || !Array.isArray(record.write)) return null
+  return {
+    pubkey: record.pubkey.toLowerCase(),
+    read: unique(record.read.filter((url): url is string => typeof url === "string")),
+    write: unique(record.write.filter((url): url is string => typeof url === "string")),
+    fetchedAt: record.fetchedAt,
+  }
+}
+
+export async function hydrateNip65(kv: Kv, pubkey: string): Promise<Nip65Lists | null> {
+  const stored = parseNip65Cache(await kv.get(KV_KEYS.nip65Cache))
+  if (!stored || stored.pubkey !== pubkey.toLowerCase()) return null
+  return { read: stored.read, write: stored.write }
+}
+
+export async function persistNip65(kv: Kv, pubkey: string, lists: Nip65Lists): Promise<void> {
+  await kv.set<Nip65Cache>(KV_KEYS.nip65Cache, {
+    pubkey: pubkey.toLowerCase(),
+    read: unique(lists.read),
+    write: unique(lists.write),
+    fetchedAt: Date.now(),
+  })
 }
