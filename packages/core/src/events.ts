@@ -70,12 +70,33 @@ export type VerifiedComment = {
   parentId?: string
 }
 
+export type WebComment = VerifiedComment & { roomUrl: string }
+
 function pointerMatchesRoom(value: string, roomUrl: string): boolean {
   try {
     return normalizeUrl(value) === roomUrl
   } catch {
     return value === roomUrl
   }
+}
+
+function firstPointer(event: Event): string | null {
+  const tag = event.tags.find((entry) => (entry[0] === "I" || entry[0] === "i") && entry[1])
+  return tag?.[1] ?? null
+}
+
+export function parseWebComment(event: Event): WebComment | null {
+  const pointer = firstPointer(event)
+  if (!pointer) return null
+  let roomUrl: string
+  try {
+    roomUrl = normalizeUrl(pointer)
+  } catch {
+    return null
+  }
+  const parsed = parseComment(event, roomUrl)
+  if (!parsed) return null
+  return { ...parsed, roomUrl }
 }
 
 export function parseComment(event: Event, roomUrl: string): VerifiedComment | null {

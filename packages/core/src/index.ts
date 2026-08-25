@@ -5,9 +5,11 @@ export {
   buildReply,
   buildTopLevel,
   parseComment,
+  parseWebComment,
   type ReplyParent,
   type UnsignedComment,
   type VerifiedComment,
+  type WebComment,
 } from "./events"
 export {
   ROOM_EVENT_CAP,
