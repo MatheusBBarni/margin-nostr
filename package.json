@@ -6,7 +6,8 @@
     "test": "bun test packages/core packages/extension",
     "dev:extension": "bun run --filter @margin/extension dev",
     "dev:web": "bun run --filter @margin/web dev",
-    "probe": "bun run --filter @margin/core probe"
+    "probe": "bun run --filter @margin/core probe",
+    "s7-proof": "bun packages/core/scripts/s7-proof.ts"
   },
   "workspaces": ["packages/*"]
 }
