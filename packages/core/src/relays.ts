@@ -93,12 +93,17 @@ export async function persistExtraRelays(kv: Kv, urls: string[]): Promise<void> 
   await kv.set<string[]>(KV_KEYS.extraRelays, parseExtraRelays(urls))
 }
 
-export function readRelays(user65?: Nip65Lists): string[] {
-  return unique([...CURATED_RELAYS, ...(user65?.read ?? []), ...(user65?.write ?? [])])
+export function readRelays(user65?: Nip65Lists, extraRelays?: readonly string[]): string[] {
+  return unique([
+    ...CURATED_RELAYS,
+    ...(user65?.read ?? []),
+    ...(user65?.write ?? []),
+    ...parseExtraRelays(extraRelays ?? []),
+  ])
 }
 
-export function writeRelays(user65?: Nip65Lists): string[] {
-  return unique([...CURATED_RELAYS, ...(user65?.write ?? [])])
+export function writeRelays(user65?: Nip65Lists, extraRelays?: readonly string[]): string[] {
+  return unique([...CURATED_RELAYS, ...(user65?.write ?? []), ...parseExtraRelays(extraRelays ?? [])])
 }
 
 export function parseNip65Cache(value: unknown): Nip65Cache | null {
