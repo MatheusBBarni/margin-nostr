@@ -2,23 +2,8 @@ import { rankRooms } from "@margin/core"
 import { applyTheme } from "@margin/ui"
 import { useEffect, useMemo } from "react"
 import { Link } from "react-router"
+import { commentCountLabel, relativeTime, roomHref } from "../roomList"
 import { useRecentRooms } from "../useRecentRooms"
-
-function relativeTime(createdAt: number): string {
-  const delta = Math.max(0, Math.floor(Date.now() / 1000) - createdAt)
-  if (delta < 60) return "just now"
-  if (delta < 3600) return `${Math.floor(delta / 60)}m`
-  if (delta < 86400) return `${Math.floor(delta / 3600)}h`
-  return `${Math.floor(delta / 86400)}d`
-}
-
-function roomHref(roomUrl: string): string {
-  return `/u/${encodeURIComponent(roomUrl)}`
-}
-
-function commentCountLabel(count: number): string {
-  return count === 1 ? "1 comment" : `${count} comments`
-}
 
 export function Rooms() {
   const { comments, error, loading } = useRecentRooms()
