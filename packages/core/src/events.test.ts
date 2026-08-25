@@ -212,4 +212,27 @@ describe("parseWebComment", () => {
     })
     expect(parseWebComment(event)?.roomUrl).toBe(ROOM)
   })
+
+  test("prefers a normalizable I over an earlier i pointer", () => {
+    const event = sign({
+      tags: [
+        ["i", "https://other.example/x"],
+        ["K", "web"],
+        ["I", ROOM],
+        ["k", "web"],
+      ],
+    })
+    expect(parseWebComment(event)?.roomUrl).toBe(ROOM)
+  })
+
+  test("accepts an i-only web pointer when I is missing", () => {
+    const event = sign({
+      tags: [
+        ["i", ROOM],
+        ["K", "web"],
+        ["k", "web"],
+      ],
+    })
+    expect(parseWebComment(event)?.roomUrl).toBe(ROOM)
+  })
 })

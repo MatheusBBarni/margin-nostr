@@ -80,9 +80,9 @@ function pointerMatchesRoom(value: string, roomUrl: string): boolean {
   }
 }
 
-function firstNormalizablePointer(event: Event): string | null {
+function firstNormalizablePointer(event: Event, names: readonly string[]): string | null {
   for (const tag of event.tags) {
-    if ((tag[0] !== "I" && tag[0] !== "i") || !tag[1]) continue
+    if (!names.includes(tag[0]) || !tag[1]) continue
     try {
       return normalizeUrl(tag[1])
     } catch {
@@ -93,7 +93,7 @@ function firstNormalizablePointer(event: Event): string | null {
 }
 
 export function parseWebComment(event: Event): WebComment | null {
-  const roomUrl = firstNormalizablePointer(event)
+  const roomUrl = firstNormalizablePointer(event, ["I"]) ?? firstNormalizablePointer(event, ["i"])
   if (!roomUrl) return null
   const parsed = parseComment(event, roomUrl)
   if (!parsed) return null

@@ -25,9 +25,13 @@ function relativeTime(createdAt: number): string {
   return `${Math.floor(delta / 86400)}d`
 }
 
-function takeNewest(comments: WebComment[]): WebComment[] {
+function takeNewest(comments: WebComment[], pubkey: string): WebComment[] {
+  const self = pubkey.toLowerCase()
   const byId = new Map<string, WebComment>()
-  for (const comment of comments) byId.set(comment.id, comment)
+  for (const comment of comments) {
+    if (comment.pubkey.toLowerCase() !== self) continue
+    byId.set(comment.id, comment)
+  }
   return [...byId.values()].sort((a, b) => b.created_at - a.created_at).slice(0, ROOM_EVENT_CAP)
 }
 
@@ -57,16 +61,16 @@ export function Me() {
     setComments([])
     setError(null)
     setLoading(false)
+    setUser65(null)
+    setExtraRelays([])
     if (!pubkey) {
       setPool(null)
-      setUser65(null)
-      setExtraRelays([])
       return
     }
     const next = new SimplePool()
     setPool(next)
     return () => {
-      next.close(writeRelays(user65Ref.current ?? undefined, extraRef.current))
+      next.close(readRelays(user65Ref.current ?? undefined, extraRef.current))
       setPool(null)
     }
   }, [pubkey])
@@ -101,7 +105,7 @@ export function Me() {
     void fetchOwnComments(pool as SessionPool, relays, pubkey)
       .then((rows) => {
         if (cancelled) return
-        setComments((current) => takeNewest([...rows, ...current]))
+        setComments((current) => takeNewest([...rows, ...current], pubkey))
         setError(null)
         setLoading(false)
       })
@@ -112,7 +116,8 @@ export function Me() {
       })
     const sub = subscribeOwnComments(pool as SessionPool, relays, pubkey, {
       onevent(comment) {
-        setComments((current) => takeNewest([comment, ...current]))
+        if (cancelled) return
+        setComments((current) => takeNewest([comment, ...current], pubkey))
       },
     })
     return () => {
