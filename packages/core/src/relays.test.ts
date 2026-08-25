@@ -1,6 +1,30 @@
 import { describe, expect, test } from "bun:test"
 import { finalizeEvent, generateSecretKey, getPublicKey } from "nostr-tools/pure"
-import { CURATED_RELAYS, fetchNip65, parseNip65, readRelays, writeRelays } from "./relays"
+import { KV_KEYS, type Kv } from "./kv"
+import {
+  CURATED_RELAYS,
+  fetchNip65,
+  hydrateNip65,
+  parseNip65,
+  persistNip65,
+  readRelays,
+  writeRelays,
+} from "./relays"
+
+function memoryKv(initial: Record<string, unknown> = {}): Kv {
+  const store = new Map(Object.entries(initial))
+  return {
+    async get<T>(key: string) {
+      return store.get(key) as T | undefined
+    },
+    async set<T>(key: string, value: T) {
+      store.set(key, value)
+    },
+    async delete(key: string) {
+      store.delete(key)
+    },
+  }
+}
 
 const sk = generateSecretKey()
 const self = getPublicKey(sk)
@@ -74,5 +98,17 @@ describe("fetchNip65", () => {
         self,
       ),
     ).toBeNull()
+  })
+})
+
+describe("hydrateNip65 / persistNip65", () => {
+  test("round-trips same-pubkey lists and ignores another pubkey", async () => {
+    const alice = "aa".repeat(32)
+    const lists = { read: ["wss://inbox.example"], write: ["wss://outbox.example"] }
+    const kv = memoryKv()
+    await persistNip65(kv, alice, lists)
+    expect(await hydrateNip65(kv, alice)).toEqual(lists)
+    expect(await hydrateNip65(kv, "cc".repeat(32))).toBeNull()
+    expect(await hydrateNip65(memoryKv({ [KV_KEYS.nip65Cache]: { nope: true } }), alice)).toBeNull()
   })
 })
