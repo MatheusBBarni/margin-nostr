@@ -45,5 +45,11 @@ export function shouldHandleComposeShortcut(input: {
   metaKey: boolean
   targetIsEditable: boolean
 }): boolean {
+  if (input.key.toLowerCase() !== "c") {
+    return false
+  }
+  if (input.altKey || input.ctrlKey || input.metaKey) {
+    return false
+  }
   return !input.targetIsEditable
 }
