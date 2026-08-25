@@ -1,22 +1,29 @@
 import {
   KV_KEYS,
-  NormalizeError,
+  addMute,
   applyFilter,
   buildReply,
   buildTopLevel,
   createBunkerSigner,
   createNip07Signer,
+  defaultFilterMode,
   evictProfileCache,
   fetchProfiles,
   hydrateSelfProfile,
   nest,
   normalizeUrl,
   parseComment,
+  persistMutes,
   persistSelfProfile,
   publishRoom,
   readRelays,
+  readSocial,
+  refreshSocial,
+  removeMute,
   subscribeRoom,
   writeRelays,
+  type FilterMode,
+  type Nip65Lists,
   type Profile,
   type Signer,
   type StoredSigner,
@@ -24,7 +31,7 @@ import {
   type ThreadNode,
   type VerifiedComment,
 } from "@margin/core"
-import { Thread, applyTheme } from "@margin/ui"
+import { Thread, applyTheme, showMutedToast } from "@margin/ui"
 import { SimplePool } from "nostr-tools"
 import { bytesToHex, hexToBytes } from "nostr-tools/utils"
 import { useEffect, useMemo, useRef, useState } from "react"
@@ -51,31 +58,38 @@ export function Room() {
   }, [params])
   const [error, setError] = useState<string | null>(null)
   const [comments, setComments] = useState<VerifiedComment[]>([])
-  const [filter, setFilter] = useState<"follows" | "everyone">("everyone")
+  const [filter, setFilter] = useState<FilterMode>("everyone")
   const [replyTo, setReplyTo] = useState<VerifiedComment | null>(null)
   const [pubkey, setPubkey] = useState<string | null>(null)
   const [profiles, setProfiles] = useState<Map<string, Profile>>(new Map())
+  const [follows, setFollows] = useState<string[]>([])
+  const [mutes, setMutes] = useState<string[]>([])
+  const [user65, setUser65] = useState<Nip65Lists | null>(null)
   const signerRef = useRef<Signer | null>(null)
   const poolRef = useRef<SimplePool | null>(null)
+  const seenRef = useRef(new Set<string>())
+  const filterTouchedRef = useRef(false)
+  const user65Ref = useRef<Nip65Lists | null>(null)
 
   const room = useMemo(() => {
     if (!raw) return null
     try {
       return normalizeUrl(raw)
-    } catch (cause) {
-      return cause instanceof NormalizeError ? null : null
+    } catch {
+      return null
     }
   }, [raw])
+  const relayKey = user65 ? `${user65.read.join("\0")}\n${user65.write.join("\0")}` : ""
 
   const nodes: ThreadNode[] = useMemo(() => {
     const nested = nest(comments)
     return applyFilter(nested.roots, {
       mode: filter,
-      follows: new Set(),
-      muted: new Set(),
+      follows: new Set(follows),
+      muted: new Set(mutes),
       self: pubkey ?? undefined,
     })
-  }, [comments, filter, pubkey])
+  }, [comments, filter, follows, mutes, pubkey])
 
   useEffect(() => {
     void (async () => {
@@ -87,31 +101,45 @@ export function Room() {
   useEffect(() => {
     setComments([])
     setReplyTo(null)
-    if (!room) {
-      document.title = "Comments"
-      return
-    }
-    document.title = `Comments on ${room}`
+    seenRef.current = new Set()
+    if (!room) document.title = "Comments"
+    else document.title = `Comments on ${room}`
+  }, [room])
+
+  useEffect(() => {
+    if (!room) return
     const pool = new SimplePool()
     poolRef.current = pool
-    const sub = subscribeRoom(pool, readRelays(), room, {
-      onevent(comment) {
-        setComments((current) => (current.some((row) => row.id === comment.id) ? current : [...current, comment]))
-      },
-    })
     return () => {
-      sub.close()
-      pool.close(readRelays())
+      pool.close(readRelays(user65Ref.current ?? undefined))
       poolRef.current = null
     }
   }, [room])
 
   useEffect(() => {
+    user65Ref.current = user65
+  }, [user65])
+
+  useEffect(() => {
+    if (!room || !poolRef.current) return
+    const relays = readRelays(user65 ?? undefined)
+    const sub = subscribeRoom(poolRef.current, relays, room, {
+      onevent(comment) {
+        if (seenRef.current.has(comment.id)) return
+        seenRef.current.add(comment.id)
+        setComments((current) => (current.some((row) => row.id === comment.id) ? current : [...current, comment]))
+      },
+    })
+    return () => sub.close()
+  }, [room, relayKey])
+
+  useEffect(() => {
     const pubkeys = [...new Set(comments.map((comment) => comment.pubkey).concat(pubkey ? [pubkey] : []))]
     if (pubkeys.length === 0) return
     const pool = poolRef.current ?? new SimplePool()
+    const relays = readRelays(user65 ?? undefined)
     let cancelled = false
-    void fetchProfiles(pool, readRelays(), pubkeys).then((next) => {
+    void fetchProfiles(pool, relays, pubkeys).then((next) => {
       if (cancelled) return
       setProfiles((current) => {
         const merged = new Map(current)
@@ -123,7 +151,7 @@ export function Room() {
     return () => {
       cancelled = true
     }
-  }, [comments, pubkey])
+  }, [comments, pubkey, relayKey])
 
   useEffect(() => {
     void (async () => {
@@ -155,6 +183,35 @@ export function Room() {
       }
     })()
   }, [room])
+
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      const snapshot = await readSocial(localKv, pubkey)
+      if (cancelled) return
+      setMutes(snapshot.mutes)
+      if (!pubkey) {
+        setFollows([])
+        setUser65(null)
+        filterTouchedRef.current = false
+        setFilter("everyone")
+        return
+      }
+      setFollows(snapshot.follows)
+      setUser65(snapshot.nip65)
+      if (!filterTouchedRef.current) setFilter(defaultFilterMode(snapshot.follows))
+
+      const pool = poolRef.current ?? new SimplePool()
+      const live = await refreshSocial(pool, readRelays(snapshot.nip65 ?? undefined), localKv, pubkey)
+      if (cancelled) return
+      setFollows(live.follows)
+      setUser65(live.nip65)
+      if (!filterTouchedRef.current) setFilter(defaultFilterMode(live.follows))
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [pubkey])
 
   async function connectNip07() {
     if (!window.nostr) {
@@ -204,6 +261,19 @@ export function Room() {
     await localKv.delete(KV_KEYS.selfProfile)
   }
 
+  async function onMute(target: string) {
+    const next = addMute(mutes, target)
+    setMutes(next)
+    await persistMutes(localKv, next)
+    showMutedToast(() => {
+      void (async () => {
+        const undone = removeMute(next, target)
+        setMutes(undone)
+        await persistMutes(localKv, undone)
+      })()
+    })
+  }
+
   async function onSubmit(text: string) {
     if (!room || !signerRef.current) return
     const unsigned = replyTo ? buildReply(room, text, replyTo) : buildTopLevel(room, text)
@@ -213,8 +283,9 @@ export function Room() {
       setError("Signer returned an event we could not verify.")
       return
     }
-    setComments((current) => [...current, parsed])
-    await publishRoom(poolRef.current ?? new SimplePool(), writeRelays(), signed)
+    seenRef.current.add(parsed.id)
+    setComments((current) => (current.some((row) => row.id === parsed.id) ? current : [...current, parsed]))
+    await publishRoom(poolRef.current ?? new SimplePool(), writeRelays(user65 ?? undefined), signed)
     setReplyTo(null)
   }
 
@@ -233,8 +304,12 @@ export function Room() {
         profiles={profiles}
         self={pubkey}
         filter={filter}
-        onFilter={setFilter}
+        onFilter={(next) => {
+          filterTouchedRef.current = true
+          setFilter(next)
+        }}
         onReply={(parentId) => setReplyTo(comments.find((row) => row.id === parentId) ?? null)}
+        onMute={onMute}
         permalink={permalinkFor(room)}
         normalizedUrl={room}
         onCopyPermalink={() => navigator.clipboard.writeText(permalinkFor(room))}
@@ -243,6 +318,7 @@ export function Room() {
         onSubmit={onSubmit}
         onCancelReply={() => setReplyTo(null)}
         pubkey={pubkey}
+        hasFollows={follows.length > 0}
         onConnectNip07={() => void connectNip07()}
         onConnectBunker={() => void connectBunker()}
         onLogout={() => void logout()}

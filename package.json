@@ -3,7 +3,7 @@
   "packageManager": "bun@1.3.13",
   "private": true,
   "scripts": {
-    "test": "bun test packages/core",
+    "test": "bun test packages/core packages/extension",
     "dev:extension": "bun run --filter @margin/extension dev",
     "dev:web": "bun run --filter @margin/web dev",
     "probe": "bun run --filter @margin/core probe"

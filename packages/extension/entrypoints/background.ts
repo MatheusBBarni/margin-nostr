@@ -1,7 +1,7 @@
 import { probeActiveTab, startBadgeWatcher } from "../src/probeBadge"
 
 export default defineBackground(() => {
-  browser.sidePanel?.setPanelBehavior?.({ openPanelOnActionClick: true }).catch(() => {})
+  void browser.sidePanel?.setPanelBehavior?.({ openPanelOnActionClick: true })?.catch?.(() => {})
   startBadgeWatcher()
 
   browser.action.onClicked.addListener((tab) => {

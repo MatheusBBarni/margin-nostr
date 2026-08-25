@@ -1,14 +1,11 @@
-export function badgeLabel(count: number): string {
-  if (count <= 0) return ""
-  if (count > 99) return "99+"
-  return String(count)
-}
+import type { BadgeState } from "@margin/core"
 
-export async function setTabBadge(tabId: number, count: number): Promise<void> {
-  const text = badgeLabel(count)
-  await browser.action.setBadgeText({ tabId, text })
-  if (!text) return
-  await browser.action.setBadgeBackgroundColor({ tabId, color: "#1863dc" })
+export async function paintTabBadge(tabId: number, state: BadgeState): Promise<void> {
+  await browser.action.setBadgeText({ tabId, text: state.text })
+  if (!state.text) return
+  if (state.background) {
+    await browser.action.setBadgeBackgroundColor({ tabId, color: state.background })
+  }
   const setTextColor = browser.action.setBadgeTextColor
   if (typeof setTextColor === "function") {
     await setTextColor({ tabId, color: "#ffffff" })
