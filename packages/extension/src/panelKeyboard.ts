@@ -20,6 +20,9 @@ export function decideFocusTarget(input: {
   hasSigner: boolean
   roomFocusable: boolean
 }): FocusTarget {
+  if (!input.signerReady) {
+    return "wait"
+  }
   if (input.signerReady && !input.hasSigner && input.roomFocusable) {
     return "auth"
   }
