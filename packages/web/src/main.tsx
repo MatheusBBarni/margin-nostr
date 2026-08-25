@@ -7,6 +7,7 @@ import { Home } from "./pages/Home"
 import { HowItWorks } from "./pages/HowItWorks"
 import { Me } from "./pages/Me"
 import { Room } from "./pages/Room"
+import { Rooms } from "./pages/Rooms"
 import "./index.css"
 
 applyTheme("dark")
@@ -21,6 +22,7 @@ createRoot(root).render(
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
+          <Route path="/rooms" element={<Rooms />} />
           <Route path="/me" element={<Me />} />
           <Route path="/u/*" element={<Room />} />
         </Route>

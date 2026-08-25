@@ -5,6 +5,7 @@ import { useWebAuth } from "./WebAuth"
 const baseLinks = [
   { to: "/", label: "Home", end: true },
   { to: "/how-it-works", label: "How it works", end: true },
+  { to: "/rooms", label: "Rooms", end: true },
 ] as const
 
 const focusRing =

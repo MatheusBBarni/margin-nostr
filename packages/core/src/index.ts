@@ -71,9 +71,17 @@ export {
   type SocialSnapshot,
 } from "./social"
 export {
+  collectRecentWebComments,
+  mergeRecentWebComments,
+  rankRooms,
+  type RankedRoom,
+} from "./rooms"
+export {
   fetchOwnComments,
+  fetchRecentWebComments,
   publishRoom,
   subscribeOwnComments,
+  subscribeRecentWebComments,
   subscribeRoom,
   type OwnCommentHandlers,
   type OwnCommentQueryPool,
