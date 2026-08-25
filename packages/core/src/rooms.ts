@@ -7,19 +7,26 @@ export type RankedRoom = {
 }
 
 export function rankRooms(comments: WebComment[]): RankedRoom[] {
-  const first = comments[0]
-  if (!first) return []
+  const byRoom = new Map<string, RankedRoom>()
 
-  let lastActivityAt = first.created_at
   for (const comment of comments) {
-    if (comment.created_at > lastActivityAt) lastActivityAt = comment.created_at
+    const existing = byRoom.get(comment.roomUrl)
+    if (existing) {
+      existing.commentCount += 1
+      if (comment.created_at > existing.lastActivityAt) {
+        existing.lastActivityAt = comment.created_at
+      }
+    } else {
+      byRoom.set(comment.roomUrl, {
+        roomUrl: comment.roomUrl,
+        commentCount: 1,
+        lastActivityAt: comment.created_at,
+      })
+    }
   }
 
-  return [
-    {
-      roomUrl: first.roomUrl,
-      commentCount: comments.length,
-      lastActivityAt,
-    },
-  ]
+  return [...byRoom.values()].sort((a, b) => {
+    if (b.commentCount !== a.commentCount) return b.commentCount - a.commentCount
+    return b.lastActivityAt - a.lastActivityAt
+  })
 }
