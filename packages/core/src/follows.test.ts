@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import { finalizeEvent, generateSecretKey, getPublicKey } from "nostr-tools/pure"
-import { fetchFollows, hydrateFollows, parseFollows } from "./follows"
+import { fetchFollows, hydrateFollows, parseFollows, persistFollows } from "./follows"
 import { KV_KEYS, type Kv } from "./kv"
 
 function memoryKv(initial: Record<string, unknown> = {}): Kv {
@@ -82,5 +82,13 @@ describe("hydrateFollows", () => {
     expect(await hydrateFollows(hit, "cc".repeat(32))).toBeNull()
     expect(await hydrateFollows(memoryKv({ [KV_KEYS.followsCache]: { nope: true } }), alice)).toBeNull()
     expect(await hydrateFollows(memoryKv(), alice)).toBeNull()
+  })
+})
+
+describe("persistFollows", () => {
+  test("round-trips ids through hydrateFollows", async () => {
+    const kv = memoryKv()
+    await persistFollows(kv, alice, [bob, bob, "nope"])
+    expect(await hydrateFollows(kv, alice)).toEqual([bob.toLowerCase()])
   })
 })
