@@ -3,7 +3,6 @@ import { NormalizeError, normalizeUrl } from "@margin/core"
 import { applyTheme } from "@margin/ui"
 import { FormEvent, useEffect, useState } from "react"
 import { useNavigate } from "react-router"
-import { AboutModal } from "./AboutModal"
 
 export function Home() {
   const navigate = useNavigate()
@@ -26,7 +25,7 @@ export function Home() {
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-xl flex-col justify-center gap-8 p-8">
+    <main className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center gap-8 p-8">
       <div className="flex flex-col items-start gap-5">
         <img
           alt="Margin"
@@ -56,7 +55,6 @@ export function Home() {
         ) : null}
         <Button type="submit">Open thread</Button>
       </form>
-      <AboutModal />
     </main>
   )
 }

@@ -2,7 +2,9 @@ import { applyTheme } from "@margin/ui"
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 import { BrowserRouter, Route, Routes } from "react-router"
+import { Layout } from "./Layout"
 import { Home } from "./pages/Home"
+import { HowItWorks } from "./pages/HowItWorks"
 import { Room } from "./pages/Room"
 import "./index.css"
 
@@ -15,8 +17,11 @@ createRoot(root).render(
   <StrictMode>
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/u/*" element={<Room />} />
+        <Route element={<Layout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/how-it-works" element={<HowItWorks />} />
+          <Route path="/u/*" element={<Room />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   </StrictMode>,

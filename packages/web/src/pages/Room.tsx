@@ -227,7 +227,7 @@ export function Room() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col">
+    <div className="mx-auto flex w-full max-w-xl flex-1 flex-col">
       <Thread
         nodes={nodes}
         profiles={profiles}
