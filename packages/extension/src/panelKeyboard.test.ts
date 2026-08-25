@@ -10,4 +10,8 @@ describe("decidePanelCommand", () => {
   test("closes the panel when the command fires, the panel is open, and close is available", () => {
     expect(decidePanelCommand({ open: true, canClose: true })).toBe("close")
   })
+
+  test("focuses the open panel when the command fires and close is unavailable", () => {
+    expect(decidePanelCommand({ open: true, canClose: false })).toBe("focus")
+  })
 })
