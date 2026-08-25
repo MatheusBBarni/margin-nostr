@@ -8,6 +8,8 @@ import {
   parseNip65,
   persistNip65,
   parseExtraRelays,
+  persistExtraRelays,
+  hydrateExtraRelays,
   readRelays,
   writeRelays,
 } from "./relays"
@@ -128,5 +130,14 @@ describe("parseExtraRelays", () => {
       ]),
     ).toEqual(["wss://extra.example", "wss://other.example"])
     expect(parseExtraRelays("bad")).toEqual([])
+  })
+})
+
+describe("hydrateExtraRelays / persistExtraRelays", () => {
+  test("round-trips extra relays and treats garbage as empty", async () => {
+    const kv = memoryKv()
+    await persistExtraRelays(kv, ["wss://extra.example/", "https://nope.example", "wss://extra.example"])
+    expect(await hydrateExtraRelays(kv)).toEqual(["wss://extra.example"])
+    expect(await hydrateExtraRelays(memoryKv({ [KV_KEYS.extraRelays]: "bad" }))).toEqual([])
   })
 })
