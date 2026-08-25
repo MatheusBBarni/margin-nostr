@@ -31,3 +31,9 @@ export function decideFocusTarget(input: {
   }
   return "compose"
 }
+
+export function shouldApplyOpenFocus(input: {
+  userHasMovedFocus: boolean
+}): boolean {
+  return !input.userHasMovedFocus
+}
