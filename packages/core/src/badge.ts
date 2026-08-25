@@ -1,3 +1,16 @@
+export type BadgeState = {
+  text: string
+  background?: string
+}
+
+export function badgeState(followsHits: number, everyoneHits: number): BadgeState {
+  if (followsHits > 0) {
+    return { text: String(Math.min(followsHits, 99)), background: "#1863dc" }
+  }
+  if (everyoneHits > 0) return { text: "•", background: "#93939f" }
+  return { text: "" }
+}
+
 export function countFollowsHits(
   events: { pubkey: string }[],
   options: { follows: Set<string>; self?: string; muted: Set<string> },
