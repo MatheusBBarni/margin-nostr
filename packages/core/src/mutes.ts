@@ -1,3 +1,5 @@
+import { KV_KEYS, type Kv } from "./kv"
+
 const PUBKEY_HEX = /^[0-9a-f]{64}$/i
 
 export function parseMutes(value: unknown): string[] {
@@ -21,4 +23,12 @@ export function addMute(mutes: string[], pubkey: string): string[] {
 export function removeMute(mutes: string[], pubkey: string): string[] {
   const hex = pubkey.toLowerCase()
   return parseMutes(mutes).filter((id) => id !== hex)
+}
+
+export async function hydrateMutes(kv: Kv): Promise<string[]> {
+  return parseMutes(await kv.get(KV_KEYS.mutes))
+}
+
+export async function persistMutes(kv: Kv, mutes: string[]): Promise<void> {
+  await kv.set<string[]>(KV_KEYS.mutes, parseMutes(mutes))
 }
