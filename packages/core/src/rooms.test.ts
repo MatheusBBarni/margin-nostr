@@ -31,4 +31,24 @@ describe("rankRooms", () => {
       { roomUrl: ROOM, commentCount: 2, lastActivityAt: 30 },
     ])
   })
+
+  test("sorts higher count first, then newer last activity", () => {
+    const busy = "https://example.com/busy"
+    const quiet = "https://example.com/quiet"
+    const alsoBusy = "https://example.com/also-busy"
+
+    expect(
+      rankRooms([
+        web({ id: "quiet-1", roomUrl: quiet, created_at: 50 }),
+        web({ id: "busy-1", roomUrl: busy, created_at: 10 }),
+        web({ id: "busy-2", roomUrl: busy, created_at: 20 }),
+        web({ id: "also-1", roomUrl: alsoBusy, created_at: 30 }),
+        web({ id: "also-2", roomUrl: alsoBusy, created_at: 40 }),
+      ]),
+    ).toEqual([
+      { roomUrl: alsoBusy, commentCount: 2, lastActivityAt: 40 },
+      { roomUrl: busy, commentCount: 2, lastActivityAt: 20 },
+      { roomUrl: quiet, commentCount: 1, lastActivityAt: 50 },
+    ])
+  })
 })
