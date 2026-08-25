@@ -80,6 +80,11 @@ function unique(urls: string[]): string[] {
   return out
 }
 
+export function parseExtraRelays(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  return unique(value.filter((url): url is string => typeof url === "string"))
+}
+
 export function readRelays(user65?: Nip65Lists): string[] {
   return unique([...CURATED_RELAYS, ...(user65?.read ?? []), ...(user65?.write ?? [])])
 }

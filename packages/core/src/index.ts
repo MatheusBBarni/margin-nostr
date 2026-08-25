@@ -26,6 +26,7 @@ export {
   parseNip65,
   parseNip65Cache,
   persistNip65,
+  parseExtraRelays,
   readRelays,
   writeRelays,
   type Nip65Cache,
