@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import { finalizeEvent, generateSecretKey, getPublicKey } from "nostr-tools/pure"
 import { KIND_COMMENT } from "./events"
-import { publishRoom, subscribeOwnComments, subscribeRoom, type PoolLike } from "./pool"
+import { fetchOwnComments, publishRoom, subscribeOwnComments, subscribeRoom, type PoolLike } from "./pool"
 
 const ROOM = "https://example.com/x"
 const sk = generateSecretKey()
@@ -142,5 +142,43 @@ describe("subscribeOwnComments", () => {
     expect(seen).toEqual([good.id])
     expect(capturedFilters).toEqual([{ kinds: [1111], authors: [self] }])
     expect(closed).toBe(1)
+  })
+})
+
+describe("fetchOwnComments", () => {
+  test("querySyncs authors filter with limit 200 and returns collected own comments", async () => {
+    const self = getPublicKey(sk)
+    const good = sign([
+      ["I", ROOM],
+      ["K", "web"],
+      ["i", ROOM],
+      ["k", "web"],
+    ])
+    const other = sign(
+      [
+        ["I", ROOM],
+        ["K", "web"],
+        ["i", ROOM],
+        ["k", "web"],
+      ],
+      "nope",
+      generateSecretKey(),
+    )
+    let captured: object | undefined
+
+    const comments = await fetchOwnComments(
+      {
+        async querySync(_relays, filter) {
+          captured = filter
+          return [other, good, good, { ...good, sig: "00".repeat(64) }]
+        },
+      },
+      ["wss://relay.example"],
+      self,
+    )
+
+    expect(captured).toEqual({ kinds: [1111], authors: [self], limit: 200 })
+    expect(comments.map((comment) => comment.id)).toEqual([good.id])
+    expect(comments[0]?.roomUrl).toBe(ROOM)
   })
 })
