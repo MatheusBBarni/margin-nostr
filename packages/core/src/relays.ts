@@ -85,6 +85,14 @@ export function parseExtraRelays(value: unknown): string[] {
   return unique(value.filter((url): url is string => typeof url === "string"))
 }
 
+export async function hydrateExtraRelays(kv: Kv): Promise<string[]> {
+  return parseExtraRelays(await kv.get(KV_KEYS.extraRelays))
+}
+
+export async function persistExtraRelays(kv: Kv, urls: string[]): Promise<void> {
+  await kv.set<string[]>(KV_KEYS.extraRelays, parseExtraRelays(urls))
+}
+
 export function readRelays(user65?: Nip65Lists): string[] {
   return unique([...CURATED_RELAYS, ...(user65?.read ?? []), ...(user65?.write ?? [])])
 }
