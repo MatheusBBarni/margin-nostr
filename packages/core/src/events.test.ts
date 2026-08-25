@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import { finalizeEvent, generateSecretKey } from "nostr-tools/pure"
-import { buildReply, buildTopLevel, parseComment } from "./events"
+import { buildReply, buildTopLevel, parseComment, parseWebComment } from "./events"
 
 const ROOM = "https://example.com/x"
 const sk = generateSecretKey()
@@ -111,5 +111,18 @@ describe("parseComment", () => {
     })
     const parsed = parseComment(reply, ROOM)
     expect(parsed?.parentId).toBe(parentId)
+  })
+})
+
+describe("parseWebComment", () => {
+  test("returns a WebComment with roomUrl and no parentId for a signed top-level web comment", () => {
+    const event = sign({})
+    const parsed = parseWebComment(event)
+    expect(parsed).not.toBeNull()
+    expect(parsed?.id).toBe(event.id)
+    expect(parsed?.pubkey).toBe(event.pubkey)
+    expect(parsed?.content).toBe("Nice article!")
+    expect(parsed?.roomUrl).toBe(ROOM)
+    expect(parsed?.parentId).toBeUndefined()
   })
 })
