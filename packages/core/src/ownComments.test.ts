@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test"
 import { finalizeEvent, generateSecretKey, getPublicKey } from "nostr-tools/pure"
 import { ROOM_EVENT_CAP } from "./thread"
 import type { WebComment } from "./events"
-import { collectOwnWebComments, groupOwnWebComments } from "./ownComments"
+import { collectOwnWebComments, groupOwnWebComments, mergeOwnWebComments } from "./ownComments"
 
 const ROOM = "https://example.com/x"
 const selfSk = generateSecretKey()
@@ -71,6 +71,16 @@ function web(partial: {
     roomUrl: partial.roomUrl,
   }
 }
+
+describe("mergeOwnWebComments", () => {
+  test("drops other pubkeys, dedups, newest first, and caps", () => {
+    const selfRow = web({ id: "self", roomUrl: ROOM, created_at: 20, content: "self" })
+    const older = web({ id: "old", roomUrl: ROOM, created_at: 10, content: "old" })
+    const stranger = { ...selfRow, id: "other", pubkey: getPublicKey(otherSk), created_at: 30, content: "nope" }
+    const merged = mergeOwnWebComments([older], [selfRow, selfRow, stranger], self)
+    expect(merged.map((comment) => comment.content)).toEqual(["self", "old"])
+  })
+})
 
 describe("groupOwnWebComments", () => {
   test("groups by roomUrl, rooms by newest comment, comments newest first", () => {

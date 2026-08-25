@@ -1,5 +1,10 @@
 export { NormalizeError, normalizeUrl } from "./normalize"
-export { collectOwnWebComments, groupOwnWebComments, type OwnCommentGroup } from "./ownComments"
+export {
+  collectOwnWebComments,
+  groupOwnWebComments,
+  mergeOwnWebComments,
+  type OwnCommentGroup,
+} from "./ownComments"
 export {
   KIND_COMMENT,
   K_WEB,
