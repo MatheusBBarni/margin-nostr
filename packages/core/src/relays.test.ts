@@ -72,6 +72,19 @@ describe("readRelays / writeRelays", () => {
     expect(writeRelays(user65)).toContain("wss://outbox.example")
     expect(writeRelays(user65)).not.toContain("wss://inbox.example")
   })
+
+  test("unions extra relays into read and write lists", () => {
+    const extra = ["wss://extra.example/", "https://nope.example"]
+    const user65 = { read: ["wss://inbox.example"], write: ["wss://outbox.example"] }
+    expect(readRelays(user65, extra)).toContain("wss://extra.example")
+    expect(writeRelays(user65, extra)).toContain("wss://extra.example")
+    for (const url of CURATED_RELAYS) {
+      expect(readRelays(user65, extra)).toContain(url)
+      expect(writeRelays(user65, extra)).toContain(url)
+    }
+    expect(readRelays(undefined, extra)).toContain("wss://extra.example")
+    expect(writeRelays(undefined, extra)).toContain("wss://extra.example")
+  })
 })
 
 describe("fetchNip65", () => {
