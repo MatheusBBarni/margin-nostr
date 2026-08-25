@@ -1,6 +1,7 @@
 import type { Event } from "nostr-tools/pure"
 import { KIND_COMMENT, parseComment, parseWebComment, type VerifiedComment, type WebComment } from "./events"
 import { collectOwnWebComments } from "./ownComments"
+import { collectRecentWebComments } from "./rooms"
 import { ROOM_EVENT_CAP } from "./thread"
 
 export type RoomSub = {
@@ -97,6 +98,14 @@ export function subscribeRecentWebComments(
       handlers.onevent(parsed)
     },
   })
+}
+
+export async function fetchRecentWebComments(
+  pool: OwnCommentQueryPool,
+  relays: string[],
+): Promise<WebComment[]> {
+  const events = await pool.querySync(relays, recentWebCommentsFilter())
+  return collectRecentWebComments(events)
 }
 
 export async function fetchOwnComments(
