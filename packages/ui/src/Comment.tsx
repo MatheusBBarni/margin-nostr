@@ -1,5 +1,5 @@
 import { Avatar, Button } from "@heroui/react"
-import type { ThreadNode } from "@margin/core"
+import { commentViewerUrl, type ThreadNode } from "@margin/core"
 import { relativeTime } from "./relativeTime"
 import { renderText } from "./renderText"
 
@@ -49,6 +49,20 @@ function MuteIcon() {
   )
 }
 
+function OpenIcon() {
+  return (
+    <svg aria-hidden="true" className="size-3.5" fill="none" viewBox="0 0 24 24">
+      <path
+        d="M14 5h5v5M19 5l-7 7M10 5H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      />
+    </svg>
+  )
+}
+
 export function Comment({ node, profiles, self, onReply, onMute }: Props) {
   const { comment } = node
   const profile = profiles.get(comment.pubkey)
@@ -78,6 +92,16 @@ export function Comment({ node, profiles, self, onReply, onMute }: Props) {
               <ReplyIcon />
               Reply
             </Button>
+            <a
+              aria-label="Open on njump"
+              className="button button--sm button--tertiary"
+              href={commentViewerUrl(comment)}
+              rel="noopener"
+              target="_blank"
+            >
+              <OpenIcon />
+              Open
+            </a>
             {onMute && self !== comment.pubkey ? (
               <Button size="sm" variant="tertiary" onPress={() => onMute(comment.pubkey)}>
                 <MuteIcon />

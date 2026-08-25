@@ -95,6 +95,7 @@ export {
   type StoredSigner,
   type ThemePreference,
 } from "./kv"
+export { commentViewerUrl } from "./commentViewer"
 export { parsePubkeyInput } from "./pubkey"
 export { createNip07Signer } from "./signers/nip07"
 export { createBunkerSigner } from "./signers/bunker"
