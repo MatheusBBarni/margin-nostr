@@ -15,10 +15,13 @@ export function decidePanelCommand(input: {
   return "focus"
 }
 
-export function decideFocusTarget(_input: {
+export function decideFocusTarget(input: {
   signerReady: boolean
   hasSigner: boolean
   roomFocusable: boolean
 }): FocusTarget {
+  if (input.signerReady && !input.hasSigner && input.roomFocusable) {
+    return "auth"
+  }
   return "compose"
 }
