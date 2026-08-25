@@ -1,6 +1,7 @@
 import { verifyEvent, type Event } from "nostr-tools/pure"
 import { KV_KEYS, type Kv } from "./kv"
 import type { QueryPool } from "./profiles"
+import { PUBKEY_HEX, uniquePubkeys } from "./pubkey"
 
 export type FollowsCache = {
   pubkey: string
@@ -8,21 +9,9 @@ export type FollowsCache = {
   fetchedAt: number
 }
 
-const PUBKEY_HEX = /^[0-9a-f]{64}$/i
-
 export function parseFollows(event: { kind: number; tags: string[][] }): string[] {
   if (event.kind !== 3) return []
-
-  const ids: string[] = []
-  const seen = new Set<string>()
-  for (const tag of event.tags) {
-    if (tag[0] !== "p" || !tag[1]) continue
-    const hex = tag[1].toLowerCase()
-    if (!PUBKEY_HEX.test(hex) || seen.has(hex)) continue
-    seen.add(hex)
-    ids.push(hex)
-  }
-  return ids
+  return uniquePubkeys(event.tags.filter((tag) => tag[0] === "p").map((tag) => tag[1]))
 }
 
 export async function fetchFollows(
@@ -48,16 +37,7 @@ export function parseFollowsCache(value: unknown): FollowsCache | null {
   if (typeof record.pubkey !== "string" || !PUBKEY_HEX.test(record.pubkey)) return null
   if (typeof record.fetchedAt !== "number" || !Number.isFinite(record.fetchedAt)) return null
   if (!Array.isArray(record.ids)) return null
-  const ids: string[] = []
-  const seen = new Set<string>()
-  for (const id of record.ids) {
-    if (typeof id !== "string") continue
-    const hex = id.toLowerCase()
-    if (!PUBKEY_HEX.test(hex) || seen.has(hex)) continue
-    seen.add(hex)
-    ids.push(hex)
-  }
-  return { pubkey: record.pubkey.toLowerCase(), ids, fetchedAt: record.fetchedAt }
+  return { pubkey: record.pubkey.toLowerCase(), ids: uniquePubkeys(record.ids), fetchedAt: record.fetchedAt }
 }
 
 export async function hydrateFollows(kv: Kv, pubkey: string): Promise<string[] | null> {
@@ -67,17 +47,9 @@ export async function hydrateFollows(kv: Kv, pubkey: string): Promise<string[] |
 }
 
 export async function persistFollows(kv: Kv, pubkey: string, ids: string[]): Promise<void> {
-  const unique: string[] = []
-  const seen = new Set<string>()
-  for (const id of ids) {
-    const hex = id.toLowerCase()
-    if (!PUBKEY_HEX.test(hex) || seen.has(hex)) continue
-    seen.add(hex)
-    unique.push(hex)
-  }
   await kv.set<FollowsCache>(KV_KEYS.followsCache, {
     pubkey: pubkey.toLowerCase(),
-    ids: unique,
+    ids: uniquePubkeys(ids),
     fetchedAt: Date.now(),
   })
 }

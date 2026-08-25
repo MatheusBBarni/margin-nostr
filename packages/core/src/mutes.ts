@@ -1,19 +1,8 @@
 import { KV_KEYS, type Kv } from "./kv"
-
-const PUBKEY_HEX = /^[0-9a-f]{64}$/i
+import { uniquePubkeys } from "./pubkey"
 
 export function parseMutes(value: unknown): string[] {
-  if (!Array.isArray(value)) return []
-  const ids: string[] = []
-  const seen = new Set<string>()
-  for (const item of value) {
-    if (typeof item !== "string") continue
-    const hex = item.toLowerCase()
-    if (!PUBKEY_HEX.test(hex) || seen.has(hex)) continue
-    seen.add(hex)
-    ids.push(hex)
-  }
-  return ids
+  return Array.isArray(value) ? uniquePubkeys(value) : []
 }
 
 export function addMute(mutes: string[], pubkey: string): string[] {

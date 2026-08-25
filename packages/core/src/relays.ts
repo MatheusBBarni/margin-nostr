@@ -1,8 +1,7 @@
 import { verifyEvent, type Event } from "nostr-tools/pure"
 import { KV_KEYS, type Kv } from "./kv"
 import type { QueryPool } from "./profiles"
-
-const PUBKEY_HEX = /^[0-9a-f]{64}$/i
+import { PUBKEY_HEX } from "./pubkey"
 
 export const CURATED_RELAYS = [
   "wss://relay.damus.io",
