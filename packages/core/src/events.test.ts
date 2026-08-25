@@ -200,4 +200,16 @@ describe("parseWebComment", () => {
     expect(parsed?.roomUrl).toBe(ROOM)
     expect(parsed?.content).toBe("a reply")
   })
+
+  test("uses a later I or i pointer when the first tag is not a web URL", () => {
+    const event = sign({
+      tags: [
+        ["I", "nostr:note1abc"],
+        ["K", "web"],
+        ["i", ROOM],
+        ["k", "web"],
+      ],
+    })
+    expect(parseWebComment(event)?.roomUrl).toBe(ROOM)
+  })
 })

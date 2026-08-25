@@ -170,7 +170,7 @@ export function Me() {
                 </header>
                 <div className="whitespace-pre-wrap text-sm leading-6">{renderText(comment.content)}</div>
                 <Link
-                  className="font-mono break-all text-xs text-[var(--action)] no-underline hover:underline"
+                  className="font-mono break-all text-xs text-[var(--action)] no-underline hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus)]"
                   to={roomHref(comment.roomUrl)}
                 >
                   {comment.roomUrl}
