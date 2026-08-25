@@ -1,5 +1,6 @@
 import { Avatar, Button } from "@heroui/react"
 import type { ThreadNode } from "@margin/core"
+import { relativeTime } from "./relativeTime"
 import { renderText } from "./renderText"
 
 export type Profile = {
@@ -46,14 +47,6 @@ function MuteIcon() {
       />
     </svg>
   )
-}
-
-function relativeTime(createdAt: number): string {
-  const delta = Math.max(0, Math.floor(Date.now() / 1000) - createdAt)
-  if (delta < 60) return "just now"
-  if (delta < 3600) return `${Math.floor(delta / 60)}m`
-  if (delta < 86400) return `${Math.floor(delta / 3600)}h`
-  return `${Math.floor(delta / 86400)}d`
 }
 
 export function Comment({ node, profiles, self, onReply, onMute }: Props) {

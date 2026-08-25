@@ -1,28 +1,22 @@
 import type { Event } from "nostr-tools/pure"
-import { parseWebComment, type WebComment } from "./events"
-import { ROOM_EVENT_CAP } from "./thread"
+import type { WebComment } from "./events"
+import { mergeWebCommentWindow, parseWebComments } from "./webComments"
+
+function ownComments(comments: WebComment[], pubkey: string): WebComment[] {
+  const self = pubkey.toLowerCase()
+  return comments.filter((comment) => comment.pubkey.toLowerCase() === self)
+}
 
 export function mergeOwnWebComments(
   current: WebComment[],
   incoming: WebComment[],
   pubkey: string,
 ): WebComment[] {
-  const self = pubkey.toLowerCase()
-  const byId = new Map<string, WebComment>()
-  for (const comment of [...current, ...incoming]) {
-    if (comment.pubkey.toLowerCase() !== self) continue
-    byId.set(comment.id, comment)
-  }
-  return [...byId.values()].sort((a, b) => b.created_at - a.created_at).slice(0, ROOM_EVENT_CAP)
+  return mergeWebCommentWindow(ownComments(current, pubkey), ownComments(incoming, pubkey))
 }
 
 export function collectOwnWebComments(events: Event[], pubkey: string): WebComment[] {
-  const parsed: WebComment[] = []
-  for (const event of events) {
-    const comment = parseWebComment(event)
-    if (comment) parsed.push(comment)
-  }
-  return mergeOwnWebComments([], parsed, pubkey)
+  return mergeOwnWebComments([], parseWebComments(events), pubkey)
 }
 
 export type OwnCommentGroup = {

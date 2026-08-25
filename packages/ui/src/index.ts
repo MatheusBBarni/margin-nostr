@@ -1,5 +1,6 @@
 export { applyTheme, resolveTheme, type ThemePreference } from "./theme"
 export { renderText } from "./renderText"
+export { relativeTime } from "./relativeTime"
 export { FilterTabs } from "./FilterTabs"
 export { AuthBar, type AuthBarHandle } from "./AuthBar"
 export { Compose, type ComposeHandle } from "./Compose"

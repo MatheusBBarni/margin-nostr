@@ -1,8 +1,8 @@
 import { rankRooms } from "@margin/core"
-import { applyTheme } from "@margin/ui"
+import { applyTheme, relativeTime } from "@margin/ui"
 import { useEffect, useMemo } from "react"
 import { Link } from "react-router"
-import { commentCountLabel, relativeTime, roomHref } from "../roomList"
+import { commentCountLabel, roomHref } from "../roomList"
 import { useRecentRooms } from "../useRecentRooms"
 
 export function Rooms() {

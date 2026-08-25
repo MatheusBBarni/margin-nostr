@@ -7,7 +7,7 @@ import {
   refreshSocial,
   subscribeOwnComments,
   writeRelays,
-  type OwnCommentQueryPool,
+  type CommentQueryPool,
   type PoolLike,
   type QueryPool,
   type RoomSub,
@@ -37,7 +37,7 @@ export function useOwnComments(pubkey: string | null): {
     if (!pubkey) return
 
     const pool = new SimplePool()
-    const session = pool as unknown as PoolLike & QueryPool & OwnCommentQueryPool
+    const session = pool as unknown as PoolLike & QueryPool & CommentQueryPool
     let cancelled = false
     let sub: RoomSub | undefined
     let closeRelays = readRelays()

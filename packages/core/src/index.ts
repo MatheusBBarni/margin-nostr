@@ -70,12 +70,8 @@ export {
   type BadgeSocial,
   type SocialSnapshot,
 } from "./social"
-export {
-  collectRecentWebComments,
-  mergeRecentWebComments,
-  rankRooms,
-  type RankedRoom,
-} from "./rooms"
+export { collectRecentWebComments, mergeRecentWebComments } from "./webComments"
+export { rankRooms, type RankedRoom } from "./rooms"
 export {
   fetchOwnComments,
   fetchRecentWebComments,
@@ -83,11 +79,11 @@ export {
   subscribeOwnComments,
   subscribeRecentWebComments,
   subscribeRoom,
-  type OwnCommentHandlers,
-  type OwnCommentQueryPool,
+  type CommentQueryPool,
   type PoolLike,
   type RoomHandlers,
   type RoomSub,
+  type WebCommentHandlers,
 } from "./pool"
 export {
   KV_KEYS,

@@ -1,9 +1,9 @@
 import { Accordion } from "@heroui/react"
 import { groupOwnWebComments } from "@margin/core"
-import { applyTheme, renderText } from "@margin/ui"
+import { applyTheme, relativeTime, renderText } from "@margin/ui"
 import { useEffect, useMemo } from "react"
 import { Link } from "react-router"
-import { commentCountLabel, relativeTime, roomHref } from "../roomList"
+import { commentCountLabel, roomHref } from "../roomList"
 import { useOwnComments } from "../useOwnComments"
 import { useWebAuth } from "../WebAuth"
 

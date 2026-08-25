@@ -3,7 +3,7 @@ import {
   fetchRecentWebComments,
   mergeRecentWebComments,
   subscribeRecentWebComments,
-  type OwnCommentQueryPool,
+  type CommentQueryPool,
   type PoolLike,
   type RoomSub,
   type WebComment,
@@ -24,7 +24,7 @@ export function useRecentRooms(): {
 
   useEffect(() => {
     const pool = new SimplePool()
-    const session = pool as unknown as PoolLike & OwnCommentQueryPool
+    const session = pool as unknown as PoolLike & CommentQueryPool
     let cancelled = false
     let sub: RoomSub | undefined
 
@@ -33,7 +33,7 @@ export function useRecentRooms(): {
       try {
         const rows = await fetchRecentWebComments(session, relays)
         if (cancelled) return
-        setComments((current) => mergeRecentWebComments(current, rows))
+        setComments(rows)
         setError(null)
       } catch {
         if (cancelled) return
