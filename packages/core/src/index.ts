@@ -77,6 +77,7 @@ export {
   type StoredSigner,
   type ThemePreference,
 } from "./kv"
+export { parsePubkeyInput } from "./pubkey"
 export { createNip07Signer } from "./signers/nip07"
 export { createBunkerSigner } from "./signers/bunker"
 export {
