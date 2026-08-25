@@ -1,13 +1,21 @@
 export { NormalizeError, normalizeUrl } from "./normalize"
 export {
+  collectOwnWebComments,
+  groupOwnWebComments,
+  mergeOwnWebComments,
+  type OwnCommentGroup,
+} from "./ownComments"
+export {
   KIND_COMMENT,
   K_WEB,
   buildReply,
   buildTopLevel,
   parseComment,
+  parseWebComment,
   type ReplyParent,
   type UnsignedComment,
   type VerifiedComment,
+  type WebComment,
 } from "./events"
 export {
   ROOM_EVENT_CAP,
@@ -63,8 +71,12 @@ export {
   type SocialSnapshot,
 } from "./social"
 export {
+  fetchOwnComments,
   publishRoom,
+  subscribeOwnComments,
   subscribeRoom,
+  type OwnCommentHandlers,
+  type OwnCommentQueryPool,
   type PoolLike,
   type RoomHandlers,
   type RoomSub,

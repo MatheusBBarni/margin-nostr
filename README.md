@@ -108,7 +108,7 @@ We do not run a relay. Read and write go to a small curated public set, unioned 
 
 **Extension (primary).** Chromium and Firefox. Side panel, not a popup. Badge, Follows / Everyone, compose, mute, permalink. Background probes the current tab URL for the badge. It never injects into the page.
 
-**Public site.** `/` is an explainer. `/u/{urlencoded-url}` renders the same thread. Logged-out default is Everyone. Connect `window.nostr` or a bunker to reply.
+**Public site.** `/` is an explainer. `/u/{urlencoded-url}` renders the same thread. `/me` lists the signed-in user's own web comments. Logged-out default is Everyone. Connect `window.nostr` or a bunker to reply.
 
 ## Repository
 

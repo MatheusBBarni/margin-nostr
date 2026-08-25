@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import { finalizeEvent, generateSecretKey } from "nostr-tools/pure"
-import { buildReply, buildTopLevel, parseComment } from "./events"
+import { buildReply, buildTopLevel, parseComment, parseWebComment } from "./events"
 
 const ROOM = "https://example.com/x"
 const sk = generateSecretKey()
@@ -111,5 +111,128 @@ describe("parseComment", () => {
     })
     const parsed = parseComment(reply, ROOM)
     expect(parsed?.parentId).toBe(parentId)
+  })
+})
+
+describe("parseWebComment", () => {
+  test("returns a WebComment with roomUrl and no parentId for a signed top-level web comment", () => {
+    const event = sign({})
+    const parsed = parseWebComment(event)
+    expect(parsed).not.toBeNull()
+    expect(parsed?.id).toBe(event.id)
+    expect(parsed?.pubkey).toBe(event.pubkey)
+    expect(parsed?.content).toBe("Nice article!")
+    expect(parsed?.roomUrl).toBe(ROOM)
+    expect(parsed?.parentId).toBeUndefined()
+  })
+
+  test("returns null for bad sig, wrong kind, missing web, and non-http pointers", () => {
+    const good = sign({})
+    const badSig = { ...good, sig: "00".repeat(64) }
+    expect(parseWebComment(badSig)).toBeNull()
+    expect(parseWebComment(sign({ kind: 1 }))).toBeNull()
+    expect(
+      parseWebComment(
+        sign({
+          tags: [
+            ["I", ROOM],
+            ["i", ROOM],
+          ],
+        }),
+      ),
+    ).toBeNull()
+    expect(
+      parseWebComment(
+        sign({
+          tags: [
+            ["I", "not-a-url"],
+            ["K", "web"],
+            ["i", "not-a-url"],
+            ["k", "web"],
+          ],
+        }),
+      ),
+    ).toBeNull()
+    expect(
+      parseWebComment(
+        sign({
+          tags: [
+            ["I", "nostr:note1abc"],
+            ["K", "web"],
+            ["i", "nostr:note1abc"],
+            ["k", "web"],
+          ],
+        }),
+      ),
+    ).toBeNull()
+  })
+
+  test("sets roomUrl to normalizeUrl of I or i, not the raw tag", () => {
+    const raw = "http://www.Example.com/a//b/?utm_source=x&id=1#frag"
+    const event = sign({
+      tags: [
+        ["I", raw],
+        ["K", "web"],
+        ["i", raw],
+        ["k", "web"],
+      ],
+    })
+    const parsed = parseWebComment(event)
+    expect(parsed?.roomUrl).toBe("https://example.com/a/b?id=1")
+    expect(parsed?.roomUrl).not.toBe(raw)
+  })
+
+  test("classifies a NIP-22 reply with parentId and the same roomUrl", () => {
+    const parentId = "aa".repeat(32)
+    const parentPubkey = "bb".repeat(32)
+    const reply = sign({
+      content: "a reply",
+      tags: [
+        ["I", ROOM],
+        ["K", "web"],
+        ["e", parentId, "", parentPubkey],
+        ["k", "1111"],
+        ["p", parentPubkey, ""],
+      ],
+    })
+    const parsed = parseWebComment(reply)
+    expect(parsed?.parentId).toBe(parentId)
+    expect(parsed?.roomUrl).toBe(ROOM)
+    expect(parsed?.content).toBe("a reply")
+  })
+
+  test("uses a later I or i pointer when the first tag is not a web URL", () => {
+    const event = sign({
+      tags: [
+        ["I", "nostr:note1abc"],
+        ["K", "web"],
+        ["i", ROOM],
+        ["k", "web"],
+      ],
+    })
+    expect(parseWebComment(event)?.roomUrl).toBe(ROOM)
+  })
+
+  test("prefers a normalizable I over an earlier i pointer", () => {
+    const event = sign({
+      tags: [
+        ["i", "https://other.example/x"],
+        ["K", "web"],
+        ["I", ROOM],
+        ["k", "web"],
+      ],
+    })
+    expect(parseWebComment(event)?.roomUrl).toBe(ROOM)
+  })
+
+  test("accepts an i-only web pointer when I is missing", () => {
+    const event = sign({
+      tags: [
+        ["i", ROOM],
+        ["K", "web"],
+        ["k", "web"],
+      ],
+    })
+    expect(parseWebComment(event)?.roomUrl).toBe(ROOM)
   })
 })

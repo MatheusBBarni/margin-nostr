@@ -24,12 +24,13 @@ If they disagree with this file, the README, or the code, this file and the code
 ## What we are building
 
 - Extension (primary): WXT MV3 side panel on the current tab URL.
-- Web: Vite SPA on Cloudflare Pages. `/` explainer. `/u/{urlencoded-url}` is the room.
+- Web: Vite SPA on Cloudflare Pages. `/` explainer. `/u/{urlencoded-url}` is the room. `/me` is a personal sent list of the signed-in user's own web comments.
 - Shared `packages/core` for normalize, events, pool helpers, signers, filters.
 - Shared `packages/ui` for Thread, Compose, Auth, filters. Presentational + callbacks only.
 
 Navigation is the URL the user is already on.
 There is no home feed.
+Exception: `/me` on the public site is a personal sent list, not a feed of other people's rooms. Do not use it as a wedge for `/rooms` or notifications.
 
 ---
 
