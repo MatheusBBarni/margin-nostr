@@ -1,8 +1,9 @@
 import { Tabs, Toast } from "@heroui/react"
 import type { FilterMode, ThreadNode } from "@margin/core"
-import { AuthBar } from "./AuthBar"
+import type { Ref } from "react"
+import { AuthBar, type AuthBarHandle } from "./AuthBar"
 import { Comment, type Profile } from "./Comment"
-import { Compose } from "./Compose"
+import { Compose, type ComposeHandle } from "./Compose"
 import { FilterTabs } from "./FilterTabs"
 import { RoomFooter } from "./RoomFooter"
 import type { VerifiedComment } from "@margin/core"
@@ -32,6 +33,8 @@ type Props = {
   onConnectBunker?: () => void
   onLogout?: () => void
   errorMessage?: string | null
+  composeRef?: Ref<ComposeHandle>
+  authBarRef?: Ref<AuthBarHandle>
 }
 
 function EmptyState({ title, body }: { title: string; body: string }) {
@@ -85,6 +88,8 @@ export function Thread({
   onConnectBunker,
   onLogout,
   errorMessage,
+  composeRef,
+  authBarRef,
 }: Props) {
   const list =
     nodes.length === 0 ? null : (
@@ -108,6 +113,7 @@ export function Thread({
       <Toast.Provider placement="bottom" width="min(360px, calc(100% - 24px))" />
       {showAuth && onConnectBunker && onLogout ? (
         <AuthBar
+          ref={authBarRef}
           pubkey={pubkey}
           profile={pubkey ? profiles.get(pubkey) : undefined}
           onConnectNip07={onConnectNip07}
@@ -136,6 +142,7 @@ export function Thread({
         </Tabs.Panel>
       </FilterTabs>
       <Compose
+        ref={composeRef}
         disabled={composeDisabled}
         replyTo={replyTo}
         onSubmit={onSubmit}

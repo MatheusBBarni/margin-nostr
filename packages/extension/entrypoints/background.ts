@@ -1,8 +1,6 @@
 import { decidePanelCommand } from "../src/panelKeyboard"
+import { LAND_FOCUS_MESSAGE, PANEL_PORT, TOGGLE_COMMAND } from "../src/panelProtocol"
 import { probeActiveTab, startBadgeWatcher } from "../src/probeBadge"
-
-const PANEL_PORT = "sidepanel"
-const TOGGLE_COMMAND = "toggle-panel"
 
 type SidebarAction = { toggle: () => Promise<void> }
 type SidePanelApi = {
@@ -12,6 +10,10 @@ type SidePanelApi = {
 
 function sidebarAction(): SidebarAction | undefined {
   return (browser as { sidebarAction?: SidebarAction }).sidebarAction
+}
+
+function sidePanelApi(): SidePanelApi | undefined {
+  return browser.sidePanel
 }
 
 export default defineBackground(() => {
@@ -29,7 +31,7 @@ export default defineBackground(() => {
 
   browser.action.onClicked.addListener((tab) => {
     if (tab.windowId == null) return
-    const sidePanel = browser.sidePanel
+    const sidePanel = sidePanelApi()
     if (sidePanel) {
       void sidePanel.open({ windowId: tab.windowId })
       return
@@ -58,7 +60,7 @@ export default defineBackground(() => {
 async function togglePanel(panelPorts: Set<Browser.runtime.Port>) {
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true })
   const windowId = tab?.windowId
-  const sidePanel = browser.sidePanel as SidePanelApi | undefined
+  const sidePanel = sidePanelApi()
   if (!sidePanel) {
     await sidebarAction()?.toggle()
     return
@@ -86,6 +88,6 @@ async function togglePanel(panelPorts: Set<Browser.runtime.Port>) {
 
 function landPanelFocus(panelPorts: Set<Browser.runtime.Port>) {
   for (const port of panelPorts) {
-    port.postMessage({ type: "landFocus" })
+    port.postMessage({ type: LAND_FOCUS_MESSAGE })
   }
 }

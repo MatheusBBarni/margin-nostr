@@ -32,12 +32,6 @@ export function decideFocusTarget(input: {
   return "compose"
 }
 
-export function shouldApplyOpenFocus(input: {
-  userHasMovedFocus: boolean
-}): boolean {
-  return !input.userHasMovedFocus
-}
-
 export function shouldHandleComposeShortcut(input: {
   key: string
   altKey: boolean
@@ -52,4 +46,28 @@ export function shouldHandleComposeShortcut(input: {
     return false
   }
   return !input.targetIsEditable
+}
+
+export function isUserFocusMove(input: {
+  type: string
+  key?: string
+  altKey?: boolean
+  ctrlKey?: boolean
+  metaKey?: boolean
+  targetIsEditable?: boolean
+}): boolean {
+  if (input.type === "pointerdown") return true
+  if (input.type !== "keydown") return false
+  if (
+    shouldHandleComposeShortcut({
+      key: input.key ?? "",
+      altKey: input.altKey === true,
+      ctrlKey: input.ctrlKey === true,
+      metaKey: input.metaKey === true,
+      targetIsEditable: input.targetIsEditable === true,
+    })
+  ) {
+    return false
+  }
+  return input.key === "Tab" || input.key?.length === 1
 }

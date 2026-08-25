@@ -18,38 +18,10 @@ import { SimplePool } from "nostr-tools"
 import { bytesToHex, hexToBytes } from "nostr-tools/utils"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { chromeKv } from "./chromeKv"
-import {
-  decideFocusTarget,
-  shouldApplyOpenFocus,
-  shouldHandleComposeShortcut,
-  type FocusTarget,
-} from "./panelKeyboard"
 import { isSkippableUrl } from "./skipUrl"
+import { usePanelKeyboard } from "./usePanelKeyboard"
 
 const PUBLIC_ORIGIN = import.meta.env.VITE_PUBLIC_ORIGIN ?? "http://localhost:5173"
-const PANEL_PORT = "sidepanel"
-
-function targetIsEditable(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false
-  if (
-    target instanceof HTMLInputElement ||
-    target instanceof HTMLTextAreaElement ||
-    target instanceof HTMLSelectElement
-  ) {
-    return true
-  }
-  return target.isContentEditable
-}
-
-function landFocus(target: FocusTarget) {
-  if (target === "compose") {
-    document.querySelector<HTMLElement>("[data-margin-compose]")?.focus()
-    return
-  }
-  if (target === "auth") {
-    document.querySelector<HTMLElement>("[data-margin-auth] button")?.focus()
-  }
-}
 
 function permalinkFor(normalized: string): string {
   return `${PUBLIC_ORIGIN}/u/${encodeURIComponent(normalized)}`
@@ -64,25 +36,17 @@ function sendToExtension(id: string, message: { type: string; params: Record<str
 }
 
 export function App() {
-  const [tabUrl, setTabUrl] = useState<string | null>(null)
-  const [tabReady, setTabReady] = useState(false)
-  const [pubkey, setPubkey] = useState<string | null>(null)
-  const [signerReady, setSignerReady] = useState(false)
+  const [tabUrl, setTabUrl] = useState<string | null | undefined>(undefined)
+  const [pubkey, setPubkey] = useState<string | null | undefined>(undefined)
   const [pool, setPool] = useState<SimplePool | null>(null)
   const [prefsEpoch, setPrefsEpoch] = useState(0)
   const [signerEpoch, setSignerEpoch] = useState(0)
   const signerRef = useRef<Signer | null>(null)
   const user65Ref = useRef<ReturnType<typeof useRoomSession>["user65"]>(null)
   const extraRelaysRef = useRef<string[]>([])
-  const userMovedFocusRef = useRef(false)
-  const openFocusAttemptedRef = useRef(false)
-  const focusStateRef = useRef({
-    signerReady: false,
-    hasSigner: false,
-    roomFocusable: false,
-  })
 
   const roomState = useMemo(() => {
+    if (tabUrl === undefined) return { status: "loading" as const }
     if (!tabUrl || isSkippableUrl(tabUrl)) return { status: "skippable" as const }
     try {
       return { status: "ok" as const, url: normalizeUrl(tabUrl) }
@@ -95,7 +59,7 @@ export function App() {
   const session = useRoomSession({
     kv: chromeKv,
     room,
-    pubkey,
+    pubkey: pubkey ?? null,
     pool: pool as SessionPool | null,
     signerRef,
     prefsEpoch,
@@ -104,16 +68,15 @@ export function App() {
   })
   user65Ref.current = session.user65
   extraRelaysRef.current = session.extraRelays
-  focusStateRef.current = {
-    signerReady,
-    hasSigner: Boolean(pubkey),
+  const { composeRef, authBarRef } = usePanelKeyboard({
+    pubkey,
+    tabUrl,
     roomFocusable: roomState.status === "ok",
-  }
+  })
 
   const refreshTab = useCallback(async () => {
     const tabs = await browser.tabs.query({ active: true, currentWindow: true })
     setTabUrl(tabs[0]?.url ?? null)
-    setTabReady(true)
   }, [])
 
   useEffect(() => {
@@ -170,10 +133,7 @@ export function App() {
       if (!stored) {
         await signerRef.current?.close?.()
         signerRef.current = null
-        if (!cancelled) {
-          setPubkey(null)
-          setSignerReady(true)
-        }
+        if (!cancelled) setPubkey(null)
         return
       }
       if (stored.method === "bunker" && stored.bunkerPointer && stored.clientSkHex && !pool) {
@@ -198,93 +158,18 @@ export function App() {
           const hex = await signer.getPublicKey()
           await session.applyCachedSelf(hex)
           if (!cancelled) setPubkey(hex)
+          return
         }
+        if (!cancelled) setPubkey(null)
       } catch {
         signerRef.current = null
         if (!cancelled) setPubkey(null)
-      } finally {
-        if (!cancelled) setSignerReady(true)
       }
     })()
     return () => {
       cancelled = true
     }
   }, [pool, room, session.applyCachedSelf, signerEpoch])
-
-  useEffect(() => {
-    const markMoved = (event: Event) => {
-      if (event instanceof KeyboardEvent) {
-        if (
-          shouldHandleComposeShortcut({
-            key: event.key,
-            altKey: event.altKey,
-            ctrlKey: event.ctrlKey,
-            metaKey: event.metaKey,
-            targetIsEditable: targetIsEditable(event.target),
-          })
-        ) {
-          return
-        }
-        if (event.key !== "Tab" && event.key.length !== 1) return
-      }
-      userMovedFocusRef.current = true
-    }
-    document.addEventListener("pointerdown", markMoved)
-    document.addEventListener("keydown", markMoved)
-    return () => {
-      document.removeEventListener("pointerdown", markMoved)
-      document.removeEventListener("keydown", markMoved)
-    }
-  }, [])
-
-  useEffect(() => {
-    const port = browser.runtime.connect({ name: PANEL_PORT })
-    const onMessage = (message: { type?: string }) => {
-      if (message?.type !== "landFocus") return
-      landFocus(decideFocusTarget(focusStateRef.current))
-    }
-    port.onMessage.addListener(onMessage)
-    return () => {
-      port.onMessage.removeListener(onMessage)
-      port.disconnect()
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!tabReady || !signerReady || openFocusAttemptedRef.current) return
-    if (!shouldApplyOpenFocus({ userHasMovedFocus: userMovedFocusRef.current })) {
-      openFocusAttemptedRef.current = true
-      return
-    }
-    const target = decideFocusTarget(focusStateRef.current)
-    if (target === "wait") return
-    openFocusAttemptedRef.current = true
-    landFocus(target)
-  }, [tabReady, signerReady, pubkey, roomState.status])
-
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (
-        !shouldHandleComposeShortcut({
-          key: event.key,
-          altKey: event.altKey,
-          ctrlKey: event.ctrlKey,
-          metaKey: event.metaKey,
-          targetIsEditable: targetIsEditable(event.target),
-        })
-      ) {
-        return
-      }
-      const target = decideFocusTarget(focusStateRef.current)
-      if (target === "none" || target === "wait") return
-      event.preventDefault()
-      landFocus(target)
-    }
-    document.addEventListener("keydown", onKeyDown)
-    return () => {
-      document.removeEventListener("keydown", onKeyDown)
-    }
-  }, [])
 
   async function connectExtension() {
     const found = await detectExtensionSigner(sendToExtension)
@@ -329,7 +214,7 @@ export function App() {
     await clearSessionSigner(chromeKv)
   }
 
-  if (roomState.status === "skippable") {
+  if (roomState.status === "loading" || roomState.status === "skippable") {
     return (
       <div className="bg-background text-foreground p-4 text-sm">
         Open an https page to see this room.
@@ -347,9 +232,11 @@ export function App() {
 
   return (
     <Thread
+      composeRef={composeRef}
+      authBarRef={authBarRef}
       nodes={session.nodes}
       profiles={session.profiles}
-      self={pubkey}
+      self={pubkey ?? null}
       filter={session.filter}
       onFilter={session.onFilter}
       onReply={session.onReply}
@@ -361,7 +248,7 @@ export function App() {
       composeDisabled={!pubkey}
       onSubmit={session.onSubmit}
       onCancelReply={session.onCancelReply}
-      pubkey={pubkey}
+      pubkey={pubkey ?? null}
       hasFollows={session.hasFollows}
       onConnectNip07={() => void connectExtension()}
       onConnectBunker={() => void connectBunker()}

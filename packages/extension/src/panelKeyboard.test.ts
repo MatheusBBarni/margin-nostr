@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test"
 import {
   decideFocusTarget,
   decidePanelCommand,
-  shouldApplyOpenFocus,
+  isUserFocusMove,
   shouldHandleComposeShortcut,
 } from "./panelKeyboard"
 
@@ -53,9 +53,26 @@ describe("decideFocusTarget", () => {
   })
 })
 
-describe("shouldApplyOpenFocus", () => {
-  test("does not apply open-focus when the user already moved focus", () => {
-    expect(shouldApplyOpenFocus({ userHasMovedFocus: true })).toBe(false)
+describe("isUserFocusMove", () => {
+  test("counts pointerdown and Tab or a typed character as movement", () => {
+    expect(isUserFocusMove({ type: "pointerdown" })).toBe(true)
+    expect(isUserFocusMove({ type: "keydown", key: "Tab" })).toBe(true)
+    expect(isUserFocusMove({ type: "keydown", key: "a" })).toBe(true)
+  })
+
+  test("does not count bare c or modifier-only keys as movement", () => {
+    expect(
+      isUserFocusMove({
+        type: "keydown",
+        key: "c",
+        altKey: false,
+        ctrlKey: false,
+        metaKey: false,
+        targetIsEditable: false,
+      }),
+    ).toBe(false)
+    expect(isUserFocusMove({ type: "keydown", key: "Shift" })).toBe(false)
+    expect(isUserFocusMove({ type: "keydown", key: "Alt" })).toBe(false)
   })
 })
 

@@ -1,18 +1,27 @@
 import { Button, TextArea } from "@heroui/react"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useImperativeHandle, useRef, useState, type Ref } from "react"
 import type { VerifiedComment } from "@margin/core"
+
+export type ComposeHandle = { focus: () => void }
 
 type Props = {
   disabled: boolean
   replyTo: VerifiedComment | null
   onSubmit: (text: string) => Promise<void>
   onCancelReply?: () => void
+  ref?: Ref<ComposeHandle>
 }
 
-export function Compose({ disabled, replyTo, onSubmit, onCancelReply }: Props) {
+export function Compose({ disabled, replyTo, onSubmit, onCancelReply, ref }: Props) {
   const [text, setText] = useState("")
   const [pending, setPending] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
+
+  useImperativeHandle(ref, () => ({
+    focus() {
+      formRef.current?.querySelector("textarea")?.focus()
+    },
+  }))
 
   useEffect(() => {
     if (!replyTo) return
@@ -55,7 +64,6 @@ export function Compose({ disabled, replyTo, onSubmit, onCancelReply }: Props) {
       ) : null}
       <TextArea
         aria-label={replyTo ? "Reply" : "Comment"}
-        data-margin-compose=""
         disabled={disabled}
         fullWidth
         maxLength={4000}

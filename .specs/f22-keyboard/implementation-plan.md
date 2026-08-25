@@ -22,10 +22,6 @@ export function decideFocusTarget(input: {
   roomFocusable: boolean
 }): FocusTarget
 
-export function shouldApplyOpenFocus(input: {
-  userHasMovedFocus: boolean
-}): boolean
-
 export function shouldHandleComposeShortcut(input: {
   key: string
   altKey: boolean
@@ -33,14 +29,23 @@ export function shouldHandleComposeShortcut(input: {
   metaKey: boolean
   targetIsEditable: boolean
 }): boolean
+
+export function isUserFocusMove(input: {
+  type: string
+  key?: string
+  altKey?: boolean
+  ctrlKey?: boolean
+  metaKey?: boolean
+  targetIsEditable?: boolean
+}): boolean
 ```
 
 Wiring (not unit-tested this cycle):
 
 - `wxt.config.ts` — `commands.toggle-panel` suggested key `Alt+Shift+M`
 - `entrypoints/background.ts` — `commands.onCommand` + panel-open tracking + Chromium/Firefox toggle
-- `packages/extension/src/App.tsx` — open-focus after first signer check; in-panel `c`
-- `@margin/ui` Compose / AuthBar — focusable controls only (no `browser`)
+- `packages/extension/src/usePanelKeyboard.ts` — one listener, one `tryLandFocus`; loadable `pubkey`/`tabUrl` (`undefined` = not ready)
+- `@margin/ui` Compose / AuthBar — optional `focus()` handles via refs. No `data-margin-*`
 
 ## Behaviors to test (in order)
 
