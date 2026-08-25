@@ -22,4 +22,10 @@ describe("decideFocusTarget", () => {
       decideFocusTarget({ signerReady: true, hasSigner: true, roomFocusable: true }),
     ).toBe("compose")
   })
+
+  test("focuses auth when the signer is ready, signed out, and the room is focusable", () => {
+    expect(
+      decideFocusTarget({ signerReady: true, hasSigner: false, roomFocusable: true }),
+    ).toBe("auth")
+  })
 })
