@@ -1,4 +1,5 @@
 export { NormalizeError, normalizeUrl } from "./normalize"
+export { collectOwnWebComments } from "./ownComments"
 export {
   KIND_COMMENT,
   K_WEB,
