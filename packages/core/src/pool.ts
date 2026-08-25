@@ -54,6 +54,13 @@ export function subscribeRoom(
   }
 }
 
+function ownCommentsFilter(pubkey: string, limit?: number) {
+  const self = pubkey.toLowerCase()
+  return limit === undefined
+    ? { kinds: [KIND_COMMENT], authors: [self] }
+    : { kinds: [KIND_COMMENT], authors: [self], limit }
+}
+
 export function subscribeOwnComments(
   pool: PoolLike,
   relays: string[],
@@ -62,7 +69,7 @@ export function subscribeOwnComments(
 ): RoomSub {
   const self = pubkey.toLowerCase()
   const seen = new Set<string>()
-  const sub = pool.subscribeMany(relays, { kinds: [KIND_COMMENT], authors: [self] }, {
+  return pool.subscribeMany(relays, ownCommentsFilter(self), {
     onevent(event: Event) {
       const parsed = parseWebComment(event)
       if (!parsed || parsed.pubkey.toLowerCase() !== self || seen.has(parsed.id)) return
@@ -70,11 +77,6 @@ export function subscribeOwnComments(
       handlers.onevent(parsed)
     },
   })
-  return {
-    close() {
-      sub.close()
-    },
-  }
 }
 
 export async function fetchOwnComments(
@@ -83,11 +85,7 @@ export async function fetchOwnComments(
   pubkey: string,
 ): Promise<WebComment[]> {
   const self = pubkey.toLowerCase()
-  const events = await pool.querySync(relays, {
-    kinds: [KIND_COMMENT],
-    authors: [self],
-    limit: ROOM_EVENT_CAP,
-  })
+  const events = await pool.querySync(relays, ownCommentsFilter(self, ROOM_EVENT_CAP))
   return collectOwnWebComments(events, self)
 }
 
