@@ -4,8 +4,11 @@ export function decidePanelCommand(input: {
   open: boolean
   canClose: boolean
 }): PanelCommand {
-  if (input.open && input.canClose) {
+  if (!input.open) {
+    return "open"
+  }
+  if (input.canClose) {
     return "close"
   }
-  return "open"
+  return "focus"
 }
