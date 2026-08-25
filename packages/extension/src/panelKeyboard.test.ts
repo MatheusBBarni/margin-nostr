@@ -6,4 +6,8 @@ describe("decidePanelCommand", () => {
     expect(decidePanelCommand({ open: false, canClose: true })).toBe("open")
     expect(decidePanelCommand({ open: false, canClose: false })).toBe("open")
   })
+
+  test("closes the panel when the command fires, the panel is open, and close is available", () => {
+    expect(decidePanelCommand({ open: true, canClose: true })).toBe("close")
+  })
 })
