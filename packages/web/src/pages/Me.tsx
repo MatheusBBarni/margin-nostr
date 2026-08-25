@@ -1,6 +1,8 @@
+import { Accordion } from "@heroui/react"
 import {
   ROOM_EVENT_CAP,
   fetchOwnComments,
+  groupOwnWebComments,
   hydrateExtraRelays,
   readRelays,
   readSocial,
@@ -12,7 +14,7 @@ import {
 } from "@margin/core"
 import { applyTheme, renderText, type SessionPool } from "@margin/ui"
 import { SimplePool } from "nostr-tools"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Link } from "react-router"
 import { localKv } from "../localKv"
 import { useWebAuth } from "../WebAuth"
@@ -39,6 +41,10 @@ function roomHref(roomUrl: string): string {
   return `/u/${encodeURIComponent(roomUrl)}`
 }
 
+function commentCountLabel(count: number): string {
+  return count === 1 ? "1 comment" : `${count} comments`
+}
+
 export function Me() {
   const { pubkey } = useWebAuth()
   const [pool, setPool] = useState<SimplePool | null>(null)
@@ -51,6 +57,8 @@ export function Me() {
   const extraRef = useRef(extraRelays)
   user65Ref.current = user65
   extraRef.current = extraRelays
+  const groups = useMemo(() => groupOwnWebComments(comments), [comments])
+  const firstRoom = groups[0]?.roomUrl
 
   useEffect(() => {
     applyTheme("dark")
@@ -157,33 +165,58 @@ export function Me() {
         </p>
       ) : null}
 
-      {pubkey && comments.length > 0 ? (
-        <ul className="flex flex-col gap-6">
-          {comments.map((comment) => (
-            <li key={comment.id}>
-              <article className="flex flex-col gap-2">
-                <header className="flex flex-wrap items-baseline gap-2">
-                  <time
-                    className="text-xs text-[var(--muted-foreground)]"
-                    dateTime={new Date(comment.created_at * 1000).toISOString()}
+      {pubkey && groups.length > 0 ? (
+        <Accordion
+          allowsMultipleExpanded
+          className="w-full"
+          defaultExpandedKeys={firstRoom ? [firstRoom] : []}
+        >
+          {groups.map((group) => (
+            <Accordion.Item key={group.roomUrl} id={group.roomUrl}>
+              <Accordion.Heading>
+                <Accordion.Trigger className="flex min-h-11 w-full items-center gap-3 text-left">
+                  <span className="min-w-0 flex-1 truncate font-mono text-xs" title={group.roomUrl}>
+                    {group.roomUrl}
+                  </span>
+                  <span className="shrink-0 text-xs text-[var(--muted-foreground)]">
+                    {commentCountLabel(group.comments.length)}
+                  </span>
+                  <Accordion.Indicator />
+                </Accordion.Trigger>
+              </Accordion.Heading>
+              <Accordion.Panel>
+                <Accordion.Body className="flex flex-col gap-6">
+                  <Link
+                    className="font-mono break-all text-xs text-[var(--action)] no-underline hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus)]"
+                    to={roomHref(group.roomUrl)}
                   >
-                    {relativeTime(comment.created_at)}
-                  </time>
-                  {comment.parentId ? (
-                    <span className="text-xs text-[var(--muted-foreground)]">reply</span>
-                  ) : null}
-                </header>
-                <div className="whitespace-pre-wrap text-sm leading-6">{renderText(comment.content)}</div>
-                <Link
-                  className="font-mono break-all text-xs text-[var(--action)] no-underline hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus)]"
-                  to={roomHref(comment.roomUrl)}
-                >
-                  {comment.roomUrl}
-                </Link>
-              </article>
-            </li>
+                    Open room
+                  </Link>
+                  <ul className="flex flex-col gap-6">
+                    {group.comments.map((comment) => (
+                      <li key={comment.id}>
+                        <article className="flex flex-col gap-2">
+                          <header className="flex flex-wrap items-baseline gap-2">
+                            <time
+                              className="text-xs text-[var(--muted-foreground)]"
+                              dateTime={new Date(comment.created_at * 1000).toISOString()}
+                            >
+                              {relativeTime(comment.created_at)}
+                            </time>
+                            {comment.parentId ? (
+                              <span className="text-xs text-[var(--muted-foreground)]">reply</span>
+                            ) : null}
+                          </header>
+                          <div className="whitespace-pre-wrap text-sm leading-6">{renderText(comment.content)}</div>
+                        </article>
+                      </li>
+                    ))}
+                  </ul>
+                </Accordion.Body>
+              </Accordion.Panel>
+            </Accordion.Item>
           ))}
-        </ul>
+        </Accordion>
       ) : null}
 
       {pubkey ? (

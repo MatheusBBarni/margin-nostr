@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test"
 import { finalizeEvent, generateSecretKey, getPublicKey } from "nostr-tools/pure"
 import { ROOM_EVENT_CAP } from "./thread"
-import { collectOwnWebComments } from "./ownComments"
+import type { WebComment } from "./events"
+import { collectOwnWebComments, groupOwnWebComments } from "./ownComments"
 
 const ROOM = "https://example.com/x"
 const selfSk = generateSecretKey()
@@ -50,5 +51,39 @@ describe("collectOwnWebComments", () => {
     expect(capped).toHaveLength(ROOM_EVENT_CAP)
     expect(capped[0]?.content).toBe(`n${ROOM_EVENT_CAP}`)
     expect(capped.some((comment) => comment.content === "n0")).toBe(false)
+  })
+})
+
+function web(partial: {
+  id: string
+  roomUrl: string
+  created_at: number
+  content?: string
+}): WebComment {
+  return {
+    id: partial.id,
+    pubkey: self,
+    kind: 1111,
+    created_at: partial.created_at,
+    content: partial.content ?? partial.id,
+    tags: [],
+    sig: "00",
+    roomUrl: partial.roomUrl,
+  }
+}
+
+describe("groupOwnWebComments", () => {
+  test("groups by roomUrl, rooms by newest comment, comments newest first", () => {
+    const olderRoom = "https://example.com/old"
+    const newerRoom = "https://example.com/new"
+    const groups = groupOwnWebComments([
+      web({ id: "old-mid", roomUrl: olderRoom, created_at: 20, content: "old-mid" }),
+      web({ id: "new-new", roomUrl: newerRoom, created_at: 40, content: "new-new" }),
+      web({ id: "old-old", roomUrl: olderRoom, created_at: 10, content: "old-old" }),
+      web({ id: "new-old", roomUrl: newerRoom, created_at: 30, content: "new-old" }),
+    ])
+    expect(groups.map((group) => group.roomUrl)).toEqual([newerRoom, olderRoom])
+    expect(groups[0]?.comments.map((comment) => comment.content)).toEqual(["new-new", "new-old"])
+    expect(groups[1]?.comments.map((comment) => comment.content)).toEqual(["old-mid", "old-old"])
   })
 })

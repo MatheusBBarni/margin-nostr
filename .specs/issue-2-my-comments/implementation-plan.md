@@ -25,6 +25,9 @@ fetchOwnComments(pool, relays, pubkey): Promise<WebComment[]>
 subscribeOwnComments(pool, relays, pubkey, handlers): { close() }
 // subscribeMany same filter (no limit required on live sub)
 // parse + pubkey check + dedup; handlers.onevent(WebComment)
+
+groupOwnWebComments(comments): OwnCommentGroup[]
+// one group per roomUrl; rooms by newest comment; comments newest first
 ```
 
 Deep module: `parseWebComment` (small return, all the drop rules). `collectOwnWebComments` is the list policy. Pool helpers are thin adapters, same idea as `subscribeRoom`.
@@ -50,7 +53,6 @@ Deep module: `parseWebComment` (small return, all the drop rules). `collectOwnWe
 - `subscribeRoom` changes
 - Extension
 - React / Playwright / HeroUI tests
-- Grouping by room
 - Live-relay CI
 
 Web still implements route, header-when-signed-in, copy, pool lifecycle, NIP-65 via `writeRelays` — after the core slices, not as `bun:test`.

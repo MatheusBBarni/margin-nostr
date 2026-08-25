@@ -17,7 +17,7 @@ On the public site, a signed-in user can open **My comments** (`/me`) and see a 
 - This cycle: **C1–C12 + C13 + C15**.
 - Header link **only when signed in**. `/me` still handles logged-out if the URL is typed.
 - No “Load older” (C14). No mute filter on this page (C16 is implicit).
-- Flat newest-first list. No room-heading grouping this cycle.
+- Group by room URL. One heading/link per room. Comments newest first inside each room. Rooms ordered by newest comment.
 
 ## 3. Expected behavior
 
@@ -30,7 +30,7 @@ On the public site, a signed-in user can open **My comments** (`/me`) and see a 
 7. Always `verifyEvent`. Drop wrong pubkey, wrong kind, non-web `K`/`k`, or `I`/`i` that `normalizeUrl` rejects.
 8. New core helper (name can move): `parseWebComment(event) → (VerifiedComment & { roomUrl: string }) | null`. `normalizeUrl` is the only room id writer. Reply vs top-level uses the same `e` + `k=1111` rule as `parseComment`. Do not reuse `subscribeRoom` (`#I`/`#i`).
 9. Dedup by event id. Sort `created_at` descending. Cap ingest at `ROOM_EVENT_CAP` (200).
-10. Flat list (not a thread tree). Row: relative time, content, normalized room URL, small “reply” mark for replies, link to `/u/{urlencoded}`. No parent fetch. No compose on this page.
+10. List grouped by room in a HeroUI Accordion (not a thread tree). Trigger shows the room URL and comment count. Expanded panel has an Open room link to `/u/{urlencoded}` plus rows (relative time, content, small “reply” mark). No parent fetch. No compose on this page.
 11. Empty: “No comments from this key on the relays we read.”
 12. Query failure: say the query failed. Do not show a blank page.
 13. Footer: this is a recent window, not a full archive; notes on relays we do not read will be missing.
@@ -73,5 +73,4 @@ Relay failure: say the query failed.
 - Extension panel entry
 - NIP-09 delete UI
 - Markdown composer
-- Grouping by room headings
 - Home feed / “what’s happening”
