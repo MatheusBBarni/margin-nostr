@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import type { VerifiedComment } from "./events"
-import { applyFilter, nest } from "./thread"
+import { applyFilter, defaultFilterMode, nest } from "./thread"
 
 function comment(partial: {
   id: string
@@ -90,5 +90,12 @@ describe("applyFilter", () => {
       self: "s",
     })
     expect(selfOnly.map((node) => node.comment.id)).toEqual(["stranger"])
+  })
+})
+
+describe("defaultFilterMode", () => {
+  test("uses follows when the list is non-empty, otherwise everyone", () => {
+    expect(defaultFilterMode(["aa".repeat(32)])).toBe("follows")
+    expect(defaultFilterMode([])).toBe("everyone")
   })
 })
