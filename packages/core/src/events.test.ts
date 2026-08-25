@@ -125,4 +125,45 @@ describe("parseWebComment", () => {
     expect(parsed?.roomUrl).toBe(ROOM)
     expect(parsed?.parentId).toBeUndefined()
   })
+
+  test("returns null for bad sig, wrong kind, missing web, and non-http pointers", () => {
+    const good = sign({})
+    const badSig = { ...good, sig: "00".repeat(64) }
+    expect(parseWebComment(badSig)).toBeNull()
+    expect(parseWebComment(sign({ kind: 1 }))).toBeNull()
+    expect(
+      parseWebComment(
+        sign({
+          tags: [
+            ["I", ROOM],
+            ["i", ROOM],
+          ],
+        }),
+      ),
+    ).toBeNull()
+    expect(
+      parseWebComment(
+        sign({
+          tags: [
+            ["I", "not-a-url"],
+            ["K", "web"],
+            ["i", "not-a-url"],
+            ["k", "web"],
+          ],
+        }),
+      ),
+    ).toBeNull()
+    expect(
+      parseWebComment(
+        sign({
+          tags: [
+            ["I", "nostr:note1abc"],
+            ["K", "web"],
+            ["i", "nostr:note1abc"],
+            ["k", "web"],
+          ],
+        }),
+      ),
+    ).toBeNull()
+  })
 })
