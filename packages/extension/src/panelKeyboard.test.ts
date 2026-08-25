@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { decideFocusTarget, decidePanelCommand } from "./panelKeyboard"
+import { decideFocusTarget, decidePanelCommand, shouldApplyOpenFocus } from "./panelKeyboard"
 
 describe("decidePanelCommand", () => {
   test("opens the panel when the command fires and the panel is closed", () => {
@@ -45,5 +45,11 @@ describe("decideFocusTarget", () => {
     expect(
       decideFocusTarget({ signerReady: true, hasSigner: false, roomFocusable: false }),
     ).toBe("none")
+  })
+})
+
+describe("shouldApplyOpenFocus", () => {
+  test("does not apply open-focus when the user already moved focus", () => {
+    expect(shouldApplyOpenFocus({ userHasMovedFocus: true })).toBe(false)
   })
 })
