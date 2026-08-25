@@ -67,7 +67,9 @@ export {
 } from "./social"
 export {
   publishRoom,
+  subscribeOwnComments,
   subscribeRoom,
+  type OwnCommentHandlers,
   type PoolLike,
   type RoomHandlers,
   type RoomSub,

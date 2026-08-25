@@ -1,5 +1,5 @@
 import type { Event } from "nostr-tools/pure"
-import { KIND_COMMENT, parseComment, type VerifiedComment } from "./events"
+import { KIND_COMMENT, parseComment, parseWebComment, type VerifiedComment, type WebComment } from "./events"
 
 export type RoomSub = {
   close: () => void
@@ -7,6 +7,10 @@ export type RoomSub = {
 
 export type RoomHandlers = {
   onevent: (comment: VerifiedComment) => void
+}
+
+export type OwnCommentHandlers = {
+  onevent: (comment: WebComment) => void
 }
 
 export type PoolLike = {
@@ -40,6 +44,29 @@ export function subscribeRoom(
   return {
     close() {
       for (const sub of subs) sub.close()
+    },
+  }
+}
+
+export function subscribeOwnComments(
+  pool: PoolLike,
+  relays: string[],
+  pubkey: string,
+  handlers: OwnCommentHandlers,
+): RoomSub {
+  const self = pubkey.toLowerCase()
+  const seen = new Set<string>()
+  const sub = pool.subscribeMany(relays, { kinds: [KIND_COMMENT], authors: [self] }, {
+    onevent(event: Event) {
+      const parsed = parseWebComment(event)
+      if (!parsed || parsed.pubkey.toLowerCase() !== self || seen.has(parsed.id)) return
+      seen.add(parsed.id)
+      handlers.onevent(parsed)
+    },
+  })
+  return {
+    close() {
+      sub.close()
     },
   }
 }
