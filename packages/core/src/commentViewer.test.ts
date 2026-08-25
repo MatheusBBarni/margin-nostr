@@ -17,4 +17,12 @@ describe("commentViewerUrl", () => {
     expect(decoded.data.author).toBe(pubkey)
     expect(decoded.data.kind).toBe(1111)
   })
+
+  test("encodes a nevent with no relays", () => {
+    const url = commentViewerUrl({ id, pubkey })
+    const decoded = decode(url.slice("https://njump.me/".length))
+    expect(decoded.type).toBe("nevent")
+    if (decoded.type !== "nevent") return
+    expect(decoded.data.relays ?? []).toEqual([])
+  })
 })
