@@ -28,4 +28,13 @@ describe("decideFocusTarget", () => {
       decideFocusTarget({ signerReady: true, hasSigner: false, roomFocusable: true }),
     ).toBe("auth")
   })
+
+  test("waits when the signer is not ready", () => {
+    expect(
+      decideFocusTarget({ signerReady: false, hasSigner: false, roomFocusable: true }),
+    ).toBe("wait")
+    expect(
+      decideFocusTarget({ signerReady: false, hasSigner: true, roomFocusable: true }),
+    ).toBe("wait")
+  })
 })
