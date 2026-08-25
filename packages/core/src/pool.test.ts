@@ -1,7 +1,14 @@
 import { describe, expect, test } from "bun:test"
 import { finalizeEvent, generateSecretKey, getPublicKey } from "nostr-tools/pure"
 import { KIND_COMMENT } from "./events"
-import { fetchOwnComments, publishRoom, subscribeOwnComments, subscribeRoom, type PoolLike } from "./pool"
+import {
+  fetchOwnComments,
+  publishRoom,
+  subscribeOwnComments,
+  subscribeRecentWebComments,
+  subscribeRoom,
+  type PoolLike,
+} from "./pool"
 
 const ROOM = "https://example.com/x"
 const sk = generateSecretKey()
@@ -180,5 +187,61 @@ describe("fetchOwnComments", () => {
     expect(captured).toEqual({ kinds: [1111], authors: [self], limit: 200 })
     expect(comments.map((comment) => comment.id)).toEqual([good.id])
     expect(comments[0]?.roomUrl).toBe(ROOM)
+  })
+})
+
+describe("subscribeRecentWebComments", () => {
+  test("uses a kind 1111 window and ignores junk and dupes", () => {
+    const good = sign([
+      ["I", ROOM],
+      ["K", "web"],
+      ["i", ROOM],
+      ["k", "web"],
+    ])
+    const other = sign(
+      [
+        ["I", ROOM],
+        ["K", "web"],
+        ["i", ROOM],
+        ["k", "web"],
+      ],
+      "also",
+      generateSecretKey(),
+    )
+    const nonWeb = sign([
+      ["I", ROOM],
+      ["i", ROOM],
+    ])
+    const seen: string[] = []
+    const capturedFilters: object[] = []
+    let closed = 0
+
+    const pool: PoolLike = {
+      subscribeMany(_relays, filter, opts) {
+        capturedFilters.push(filter)
+        opts.onevent(good)
+        opts.onevent(good)
+        opts.onevent({ ...good, sig: "00".repeat(64) })
+        opts.onevent(nonWeb)
+        opts.onevent(other)
+        return {
+          close() {
+            closed += 1
+          },
+        }
+      },
+      publish: () => [],
+    }
+
+    const sub = subscribeRecentWebComments(pool, ["wss://relay.example"], {
+      onevent(comment) {
+        seen.push(comment.id)
+      },
+    })
+    sub.close()
+
+    expect(seen).toEqual([good.id, other.id])
+    expect(capturedFilters).toEqual([{ kinds: [1111], limit: 200 }])
+    expect(closed).toBe(1)
   })
 })
