@@ -2,6 +2,7 @@ import type { Event } from "nostr-tools/pure"
 import { KIND_COMMENT, parseComment, parseWebComment, type VerifiedComment, type WebComment } from "./events"
 import { collectOwnWebComments } from "./ownComments"
 import { ROOM_EVENT_CAP } from "./thread"
+import { collectRecentWebComments } from "./webComments"
 
 export type RoomSub = {
   close: () => void
@@ -11,7 +12,7 @@ export type RoomHandlers = {
   onevent: (comment: VerifiedComment) => void
 }
 
-export type OwnCommentHandlers = {
+export type WebCommentHandlers = {
   onevent: (comment: WebComment) => void
 }
 
@@ -24,7 +25,7 @@ export type PoolLike = {
   publish: (relays: string[], event: Event) => Promise<unknown>[]
 }
 
-export type OwnCommentQueryPool = {
+export type CommentQueryPool = {
   querySync: (relays: string[], filter: object) => Promise<Event[]>
 }
 
@@ -61,26 +62,62 @@ function ownCommentsFilter(pubkey: string, limit?: number) {
     : { kinds: [KIND_COMMENT], authors: [self], limit }
 }
 
-export function subscribeOwnComments(
+function subscribeWebComments(
   pool: PoolLike,
   relays: string[],
-  pubkey: string,
-  handlers: OwnCommentHandlers,
+  filter: object,
+  handlers: WebCommentHandlers,
+  keep: (comment: WebComment) => boolean,
 ): RoomSub {
-  const self = pubkey.toLowerCase()
   const seen = new Set<string>()
-  return pool.subscribeMany(relays, ownCommentsFilter(self), {
+  return pool.subscribeMany(relays, filter, {
     onevent(event: Event) {
       const parsed = parseWebComment(event)
-      if (!parsed || parsed.pubkey.toLowerCase() !== self || seen.has(parsed.id)) return
+      if (!parsed || !keep(parsed) || seen.has(parsed.id)) return
       seen.add(parsed.id)
       handlers.onevent(parsed)
     },
   })
 }
 
+export function subscribeOwnComments(
+  pool: PoolLike,
+  relays: string[],
+  pubkey: string,
+  handlers: WebCommentHandlers,
+): RoomSub {
+  const self = pubkey.toLowerCase()
+  return subscribeWebComments(
+    pool,
+    relays,
+    ownCommentsFilter(self),
+    handlers,
+    (comment) => comment.pubkey.toLowerCase() === self,
+  )
+}
+
+function recentWebCommentsFilter() {
+  return { kinds: [KIND_COMMENT], limit: ROOM_EVENT_CAP }
+}
+
+export function subscribeRecentWebComments(
+  pool: PoolLike,
+  relays: string[],
+  handlers: WebCommentHandlers,
+): RoomSub {
+  return subscribeWebComments(pool, relays, recentWebCommentsFilter(), handlers, () => true)
+}
+
+export async function fetchRecentWebComments(
+  pool: CommentQueryPool,
+  relays: string[],
+): Promise<WebComment[]> {
+  const events = await pool.querySync(relays, recentWebCommentsFilter())
+  return collectRecentWebComments(events)
+}
+
 export async function fetchOwnComments(
-  pool: OwnCommentQueryPool,
+  pool: CommentQueryPool,
   relays: string[],
   pubkey: string,
 ): Promise<WebComment[]> {
