@@ -52,6 +52,7 @@ export function App() {
     pool: pool as SessionPool | null,
     signerRef,
     onAfterWrite: probeBadge,
+    onSocialReady: probeBadge,
   })
   user65Ref.current = session.user65
 

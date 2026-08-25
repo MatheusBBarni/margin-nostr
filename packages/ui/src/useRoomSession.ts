@@ -40,9 +40,10 @@ type Options = {
   pool: SessionPool | null
   signerRef: RefObject<Signer | null>
   onAfterWrite?: () => void
+  onSocialReady?: () => void
 }
 
-export function useRoomSession({ kv, room, pubkey, pool, signerRef, onAfterWrite }: Options) {
+export function useRoomSession({ kv, room, pubkey, pool, signerRef, onAfterWrite, onSocialReady }: Options) {
   const [error, setError] = useState<string | null>(null)
   const [comments, setComments] = useState<VerifiedComment[]>([])
   const [filter, setFilter] = useState<FilterMode>("everyone")
@@ -113,22 +114,25 @@ export function useRoomSession({ kv, room, pubkey, pool, signerRef, onAfterWrite
         setUser65(null)
         filterTouched.current = false
         setFilter("everyone")
+        onSocialReady?.()
         return
       }
       setFollows(snapshot.follows)
       setUser65(snapshot.nip65)
       if (!filterTouched.current) setFilter(defaultFilterMode(snapshot.follows))
+      onSocialReady?.()
       if (!pool) return
       const live = await refreshSocial(pool, readRelays(snapshot.nip65 ?? undefined), kv, pubkey)
       if (cancelled) return
       setFollows(live.follows)
       setUser65(live.nip65)
       if (!filterTouched.current) setFilter(defaultFilterMode(live.follows))
+      onSocialReady?.()
     })()
     return () => {
       cancelled = true
     }
-  }, [kv, pool, pubkey])
+  }, [kv, onSocialReady, pool, pubkey])
 
   const applyCachedSelf = useCallback(
     async (hex: string) => {
