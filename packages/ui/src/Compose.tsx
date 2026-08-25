@@ -55,6 +55,7 @@ export function Compose({ disabled, replyTo, onSubmit, onCancelReply }: Props) {
       ) : null}
       <TextArea
         aria-label={replyTo ? "Reply" : "Comment"}
+        data-margin-compose=""
         disabled={disabled}
         fullWidth
         maxLength={4000}

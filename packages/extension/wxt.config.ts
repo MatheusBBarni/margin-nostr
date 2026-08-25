@@ -15,6 +15,14 @@ export default defineConfig({
     action: {
       default_title: "Margin",
     },
+    commands: {
+      "toggle-panel": {
+        suggested_key: {
+          default: "Alt+Shift+M",
+        },
+        description: "Toggle the Margin side panel",
+      },
+    },
     browser_specific_settings: {
       gecko: {
         id: "margin@local",

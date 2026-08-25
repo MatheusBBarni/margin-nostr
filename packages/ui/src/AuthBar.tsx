@@ -24,7 +24,10 @@ export function AuthBar({ pubkey, profile, onConnectNip07, onConnectBunker, onLo
     const label = profile?.display_name || profile?.name || shortNpub(pubkey)
     const initial = label.slice(0, 2).toUpperCase()
     return (
-      <div className={["flex min-w-0 items-center gap-2", className ?? "justify-between"].join(" ")}>
+      <div
+        className={["flex min-w-0 items-center gap-2", className ?? "justify-between"].join(" ")}
+        data-margin-auth=""
+      >
 
         <div className="flex min-w-0 items-center gap-2">
           <Avatar size="sm">
@@ -41,7 +44,7 @@ export function AuthBar({ pubkey, profile, onConnectNip07, onConnectBunker, onLo
   }
 
   return (
-    <div className={["flex flex-nowrap gap-2", className].filter(Boolean).join(" ")}>
+    <div className={["flex flex-nowrap gap-2", className].filter(Boolean).join(" ")} data-margin-auth="">
 
       {onConnectNip07 ? (
         <Button size="sm" onPress={onConnectNip07}>
