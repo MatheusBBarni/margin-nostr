@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { countFollowsHits } from "./badge"
+import { badgeState, countFollowsHits } from "./badge"
 
 const follow = "aa".repeat(32)
 const self = "bb".repeat(32)
@@ -24,5 +24,14 @@ describe("countFollowsHits", () => {
         },
       ),
     ).toBe(3)
+  })
+})
+
+describe("badgeState", () => {
+  test("paints a capped count, a quiet dot, or a clear badge", () => {
+    expect(badgeState(3, 10)).toEqual({ text: "3", background: "#1863dc" })
+    expect(badgeState(120, 10)).toEqual({ text: "99", background: "#1863dc" })
+    expect(badgeState(0, 4)).toEqual({ text: "•", background: "#93939f" })
+    expect(badgeState(0, 0)).toEqual({ text: "" })
   })
 })
