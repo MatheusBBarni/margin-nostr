@@ -1,6 +1,6 @@
 # F20 — Relay status (connected / failed)
 
-**Status:** deferred (P1)  
+**Status:** done  
 **PRD:** F20  
 **TECHSPEC:** `Thread` / `RoomFooter` `relayHealth`
 

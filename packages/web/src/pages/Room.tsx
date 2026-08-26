@@ -92,6 +92,7 @@ export function Room() {
         permalink={permalinkFor(room)}
         normalizedUrl={room}
         onCopyPermalink={() => navigator.clipboard.writeText(permalinkFor(room))}
+        relayHealth={session.relayHealth}
         replyTo={session.replyTo}
         composeDisabled={!pubkey}
         onSubmit={session.onSubmit}

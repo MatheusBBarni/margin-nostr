@@ -1,6 +1,6 @@
 # F19 — Link a comment to a generic viewer
 
-**Status:** deferred (P1)  
+**Status:** done  
 **PRD:** F19  
 **TECHSPEC:** §9 External event link
 

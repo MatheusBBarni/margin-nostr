@@ -1,6 +1,6 @@
 # F22 — Keyboard: toggle panel, focus compose
 
-**Status:** deferred (P2)  
+**Status:** done  
 **PRD:** F22
 
 ## Behavior

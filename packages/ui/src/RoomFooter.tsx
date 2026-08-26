@@ -1,6 +1,5 @@
+import { formatRelayHealth, type RelayHealth } from "@margin/core"
 import { Button, toast } from "@heroui/react"
-
-type RelayHealth = { url: string; status: "connected" | "failed" | "unknown" }
 
 type Props = {
   normalizedUrl: string
@@ -27,8 +26,8 @@ export function RoomFooter({ normalizedUrl, permalink, onCopyPermalink, relayHea
           Copy thread
         </Button>
         {relayHealth?.length ? (
-          <p className="text-xs text-[var(--muted-foreground)]">
-            {relayHealth.filter((relay) => relay.status === "connected").length}/{relayHealth.length} relays
+          <p role="status" aria-atomic="true" className="text-xs text-[var(--muted-foreground)]">
+            {formatRelayHealth(relayHealth)}
           </p>
         ) : null}
       </div>

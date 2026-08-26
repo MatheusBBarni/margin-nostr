@@ -1,6 +1,6 @@
 # S7 — Follows filter, badge, mute, NIP-65 merge
 
-**Status:** deferred (after M0 S0–S6)  
+**Status:** done  
 **PRD:** F8 (NIP-65 read), F9, F10 (wire), F12, F17  
 **TECHSPEC:** §5.3 `applyFilter`, §5.4–5.6, §7.2 badge, slice S7
 

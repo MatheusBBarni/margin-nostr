@@ -1,6 +1,6 @@
 # S8 — Options, Firefox, permalink origin, probe report
 
-**Status:** deferred (after S7)  
+**Status:** done  
 **PRD:** F11 Firefox, options UX, M1  
 **TECHSPEC:** §7.4, slice S8, §11 probe
 

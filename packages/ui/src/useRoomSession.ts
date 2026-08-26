@@ -16,8 +16,11 @@ import {
   readRelays,
   readSocial,
   refreshSocial,
+  relayHealth as snapshotRelayHealth,
   relayListKey,
+  rememberRelayStatus,
   subscribeRoom,
+  syncRelayConnections,
   unmutePubkey,
   writeRelays,
   type FilterMode,
@@ -26,6 +29,7 @@ import {
   type Nip65Lists,
   type PoolLike,
   type QueryPool,
+  type RelayHealth,
   type Signer,
   type ThreadNode,
   type VerifiedComment,
@@ -34,7 +38,13 @@ import { type RefObject, useCallback, useEffect, useMemo, useRef, useState } fro
 import { showMutedToast } from "./muteToast"
 import type { Profile } from "./Comment"
 
-export type SessionPool = PoolLike & QueryPool
+export type SessionPool = PoolLike & QueryPool & {
+  listConnectionStatus?: () => Map<string, boolean>
+  onRelayConnectionSuccess?: (url: string) => void
+  onRelayConnectionFailure?: (url: string) => void
+}
+
+const RELAY_HEALTH_POLL_MS = 1000
 
 type Options = {
   kv: Kv
@@ -70,8 +80,10 @@ export function useRoomSession({
   const [mutes, setMutes] = useState<string[]>([])
   const [user65, setUser65] = useState<Nip65Lists | null>(null)
   const [extraRelays, setExtraRelays] = useState<string[]>([])
+  const [relayHealth, setRelayHealth] = useState<RelayHealth[]>([])
   const ingest = useRef(createCommentIngest()).current
   const filterTouched = useRef(false)
+  const knownRelays = useRef(new Map<string, "connected" | "failed">())
   const relaysKey = `${relayListKey(user65)}\n${extraRelays.join("\0")}`
 
   const nodes: ThreadNode[] = useMemo(
@@ -90,6 +102,42 @@ export function useRoomSession({
     setReplyTo(null)
     ingest.reset()
   }, [ingest, room])
+
+  useEffect(() => {
+    knownRelays.current = new Map()
+  }, [pool, room])
+
+  useEffect(() => {
+    if (!room || !pool) {
+      setRelayHealth([])
+      return
+    }
+    const known = knownRelays.current
+    const urls = readRelays(user65 ?? undefined, extraRelays)
+    const snapshot = () => setRelayHealth(snapshotRelayHealth(urls, known))
+    const previousSuccess = pool.onRelayConnectionSuccess
+    const previousFailure = pool.onRelayConnectionFailure
+    pool.onRelayConnectionSuccess = (url) => {
+      previousSuccess?.(url)
+      if (rememberRelayStatus(known, url, "connected")) snapshot()
+    }
+    pool.onRelayConnectionFailure = (url) => {
+      previousFailure?.(url)
+      if (rememberRelayStatus(known, url, "failed")) snapshot()
+    }
+    snapshot()
+    const live = pool.listConnectionStatus?.()
+    if (live && syncRelayConnections(known, live)) snapshot()
+    const timer = setInterval(() => {
+      const next = pool.listConnectionStatus?.()
+      if (next && syncRelayConnections(known, next)) snapshot()
+    }, RELAY_HEALTH_POLL_MS)
+    return () => {
+      clearInterval(timer)
+      pool.onRelayConnectionSuccess = previousSuccess
+      pool.onRelayConnectionFailure = previousFailure
+    }
+  }, [extraRelays, pool, relaysKey, room, user65])
 
   useEffect(() => {
     if (!room || !pool) return
@@ -226,6 +274,7 @@ export function useRoomSession({
     applyCachedSelf,
     user65,
     extraRelays,
+    relayHealth,
     hasFollows: follows.length > 0,
   }
 }

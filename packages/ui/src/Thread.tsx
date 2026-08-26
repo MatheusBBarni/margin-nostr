@@ -1,14 +1,11 @@
 import { Tabs, Toast } from "@heroui/react"
-import type { FilterMode, ThreadNode } from "@margin/core"
+import type { FilterMode, RelayHealth, ThreadNode, VerifiedComment } from "@margin/core"
 import type { Ref } from "react"
 import { AuthBar, type AuthBarHandle } from "./AuthBar"
 import { Comment, type Profile } from "./Comment"
 import { Compose, type ComposeHandle } from "./Compose"
 import { FilterTabs } from "./FilterTabs"
 import { RoomFooter } from "./RoomFooter"
-import type { VerifiedComment } from "@margin/core"
-
-type RelayHealth = { url: string; status: "connected" | "failed" | "unknown" }
 
 type Props = {
   nodes: ThreadNode[]

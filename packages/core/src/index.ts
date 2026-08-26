@@ -43,6 +43,15 @@ export {
   type Nip65Lists,
 } from "./relays"
 export {
+  formatRelayHealth,
+  relayHealth,
+  relayShortName,
+  rememberRelayStatus,
+  syncRelayConnections,
+  type RelayHealth,
+  type RelayStatus,
+} from "./relayHealth"
+export {
   fetchFollows,
   hydrateFollows,
   parseFollows,
