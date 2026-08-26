@@ -2,7 +2,7 @@
 
 `docs/` is only `docs/tasks/`. Status lives in each file. Do not pick a **done** task.
 
-Product P1/P2 in that list is done. What is left is proof, then store/launch.
+Product P1/P2 in that list is done. What is left is one hand proof, then store/launch.
 
 ## Already shipped
 
@@ -10,10 +10,10 @@ Product P1/P2 in that list is done. What is left is proof, then store/launch.
 | --- | --- |
 | S7 Follows / badge / mute / NIP-65 | Panel + `/u/`, `probeBadge`, `applyFilter`, `s7-proof` |
 | S8 Options / Firefox / probe | `Options.tsx`, `gecko.id`, `relays.probe.md` (4/5 `#I` ok; damus no-index) |
-| F19 njump | Open on each thread comment → njump nevent |
-| F20 Relay status | Live `/u/` footer: `nos up, primal up, oxtr up, wellorder up` |
+| F19 njump | Live `/u/https://digibee.com/`: Open → njump kind **1111**. Tab focus ring after HeroUI `Link` fix |
+| F20 Relay status | Live footer: `nos up, primal up, oxtr up, wellorder up` |
 | F22 Keyboard | `toggle-panel` `Alt+Shift+M`, `panelKeyboard.ts` |
-| F23 Context menu | Merged. Right-click **Comment on this page** → `sidePanel.open({ tabId })` / Firefox `sidebarAction.open()` |
+| F23 Context menu | Code on `main`. Right-click **Comment on this page** → `sidePanel.open({ tabId })` / Firefox `sidebarAction.open()` |
 | F24 title (static) | `document.title = Comments on ${url}` on `/u/` |
 
 Also shipped: `/me`, `/rooms`, `/privacy`.
@@ -26,21 +26,19 @@ Also shipped: `/me`, `/rooms`, `/privacy`.
 
 ## Order
 
-**1. Manual proof**
+**1. F23 by hand (next)**  
+Reload the unpacked extension from this `main`.
 
-F19 (playwright-cli, live `/u/https://digibee.com/`):
-- **Open** is in the comment row, `target=_blank`, njump nevent.
-- Tab from Reply lands on **Open on njump**.
-- Click opens njump: Kind type **1111** Comment, same body, `I`/`K=web`.
-- Focus ring: Open is a HeroUI `Link` with button variants, so `data-focus-visible` paints the ring (`#4c6ee6`).
+- Right-click an https page → **Comment on this page** → same panel as the toolbar, that tab.
+- Same on a link and an image.
+- `chrome://` has no item.
+- Firefox: `sidebarAction.open()`, not toggle.
 
-F23: not automatable here. Native `contextMenus` is OS chrome. CLI `--load-extension` did not keep Margin in `chrome://extensions`. Still owed by hand (https page, link/image, `chrome://`, Firefox `open()`).
-
-agent-browser: bundled Chrome for Testing is broken on this machine (`dlopen` missing Framework). Used `--cdp 9222` against system Chrome instead.
+Native `contextMenus` is OS chrome, so this one is not a playwright/agent-browser job.
 
 **2. Launch-only, later**  
 Store listing, real `VITE_PUBLIC_ORIGIN`, AMO `gecko.id`, NIP-51, domain.
 
 ## Recommendation
 
-F19 proof is done. F23 still needs a hand click-through. There is no other open product task in `docs/tasks`.
+Do the F23 click-through. There is no other open product task in `docs/tasks`.
