@@ -11,6 +11,15 @@ describe("decideContextMenuClick", () => {
     ).toEqual({ action: "open", tabId: 42 })
   })
 
+  test("opens the panel for our item on an http tab", () => {
+    expect(
+      decideContextMenuClick({
+        menuItemId: COMMENT_ON_PAGE_ID,
+        tab: { id: 7, url: "http://example.com/x" },
+      }),
+    ).toEqual({ action: "open", tabId: 7 })
+  })
+
   test("ignores skippable and non-http(s) tabs", () => {
     for (const url of [
       "chrome://extensions",
