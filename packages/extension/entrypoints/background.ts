@@ -3,9 +3,9 @@ import { decidePanelCommand } from "../src/panelKeyboard"
 import { LAND_FOCUS_MESSAGE, PANEL_PORT, TOGGLE_COMMAND } from "../src/panelProtocol"
 import { probeActiveTab, startBadgeWatcher } from "../src/probeBadge"
 
-type SidebarAction = { toggle: () => Promise<void>; open?: () => Promise<void> }
+type SidebarAction = { toggle: () => Promise<void>; open: () => Promise<void> }
 type SidePanelApi = {
-  open: (options: { tabId: number; windowId?: number } | { windowId: number }) => Promise<void>
+  open: (options: { tabId: number } | { windowId: number }) => Promise<void>
   close?: (options: { windowId: number }) => Promise<void>
 }
 
@@ -26,7 +26,7 @@ export default defineBackground(() => {
       tab: tab ? { id: tab.id, url: tab.url } : undefined,
     })
     if (decision.action !== "open") return
-    void openPanelOnTab(decision.tabId, tab?.windowId)
+    void openPanelOnTab(decision.tabId)
   })
   void browser.contextMenus.removeAll().finally(() => {
     browser.contextMenus.create(commentOnPageMenu())
@@ -69,13 +69,13 @@ export default defineBackground(() => {
   })
 })
 
-async function openPanelOnTab(tabId: number, windowId?: number) {
+async function openPanelOnTab(tabId: number) {
   const sidePanel = sidePanelApi()
   if (sidePanel) {
-    await sidePanel.open(windowId == null ? { tabId } : { tabId, windowId })
+    await sidePanel.open({ tabId })
     return
   }
-  await sidebarAction()?.open?.()
+  await sidebarAction()?.open()
 }
 
 async function togglePanel(panelPorts: Set<Browser.runtime.Port>) {

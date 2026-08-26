@@ -23,6 +23,6 @@ export function decideContextMenuClick(input: {
 }): ContextMenuClickDecision {
   if (String(input.menuItemId) !== COMMENT_ON_PAGE_ID) return { action: "ignore" }
   const tabId = input.tab?.id
-  if (typeof tabId !== "number" || !isHttpUrl(input.tab?.url)) return { action: "ignore" }
+  if (typeof tabId !== "number" || tabId < 0 || !isHttpUrl(input.tab?.url)) return { action: "ignore" }
   return { action: "open", tabId }
 }
