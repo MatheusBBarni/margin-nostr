@@ -13,15 +13,16 @@ export type ContextMenuClickDecision =
   | { action: "open"; tabId: number }
   | { action: "ignore" }
 
+function isHttpUrl(url: string | undefined): url is string {
+  return !!url && (url.startsWith("https://") || url.startsWith("http://"))
+}
+
 export function decideContextMenuClick(input: {
   menuItemId: string | number
   tab?: { id?: number; url?: string }
 }): ContextMenuClickDecision {
   if (String(input.menuItemId) !== COMMENT_ON_PAGE_ID) return { action: "ignore" }
   const tabId = input.tab?.id
-  const url = input.tab?.url
-  if (typeof tabId !== "number" || !(url?.startsWith("https://") || url?.startsWith("http://"))) {
-    return { action: "ignore" }
-  }
+  if (typeof tabId !== "number" || !isHttpUrl(input.tab?.url)) return { action: "ignore" }
   return { action: "open", tabId }
 }
