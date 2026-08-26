@@ -29,6 +29,20 @@ describe("decideContextMenuClick", () => {
     }
   })
 
+  test("ignores a click with no tab id", () => {
+    expect(
+      decideContextMenuClick({
+        menuItemId: COMMENT_ON_PAGE_ID,
+        tab: { url: "https://example.com/x" },
+      }),
+    ).toEqual({ action: "ignore" })
+    expect(
+      decideContextMenuClick({
+        menuItemId: COMMENT_ON_PAGE_ID,
+      }),
+    ).toEqual({ action: "ignore" })
+  })
+
   test("ignores a different menu item", () => {
     expect(
       decideContextMenuClick({
