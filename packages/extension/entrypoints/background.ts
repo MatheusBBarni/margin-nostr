@@ -1,10 +1,11 @@
+import { commentOnPageMenu, decideContextMenuClick } from "../src/contextMenu"
 import { decidePanelCommand } from "../src/panelKeyboard"
 import { LAND_FOCUS_MESSAGE, PANEL_PORT, TOGGLE_COMMAND } from "../src/panelProtocol"
 import { probeActiveTab, startBadgeWatcher } from "../src/probeBadge"
 
-type SidebarAction = { toggle: () => Promise<void> }
+type SidebarAction = { toggle: () => Promise<void>; open?: () => Promise<void> }
 type SidePanelApi = {
-  open: (options: { windowId: number }) => Promise<void>
+  open: (options: { tabId: number; windowId?: number } | { windowId: number }) => Promise<void>
   close?: (options: { windowId: number }) => Promise<void>
 }
 
@@ -19,6 +20,17 @@ function sidePanelApi(): SidePanelApi | undefined {
 export default defineBackground(() => {
   void browser.sidePanel?.setPanelBehavior?.({ openPanelOnActionClick: true })?.catch?.(() => {})
   startBadgeWatcher()
+  browser.contextMenus.onClicked.addListener((info, tab) => {
+    const decision = decideContextMenuClick({
+      menuItemId: info.menuItemId,
+      tab: tab ? { id: tab.id, url: tab.url } : undefined,
+    })
+    if (decision.action !== "open") return
+    void openPanelOnTab(decision.tabId, tab?.windowId)
+  })
+  void browser.contextMenus.removeAll().finally(() => {
+    browser.contextMenus.create(commentOnPageMenu())
+  })
 
   const panelPorts = new Set<Browser.runtime.Port>()
   browser.runtime.onConnect.addListener((port) => {
@@ -56,6 +68,15 @@ export default defineBackground(() => {
     return true
   })
 })
+
+async function openPanelOnTab(tabId: number, windowId?: number) {
+  const sidePanel = sidePanelApi()
+  if (sidePanel) {
+    await sidePanel.open(windowId == null ? { tabId } : { tabId, windowId })
+    return
+  }
+  await sidebarAction()?.open?.()
+}
 
 async function togglePanel(panelPorts: Set<Browser.runtime.Port>) {
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true })
