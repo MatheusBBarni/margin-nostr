@@ -11,6 +11,24 @@ describe("decideContextMenuClick", () => {
     ).toEqual({ action: "open", tabId: 42 })
   })
 
+  test("ignores skippable and non-http(s) tabs", () => {
+    for (const url of [
+      "chrome://extensions",
+      "about:blank",
+      "chrome-extension://abc/page.html",
+      "moz-extension://abc/page.html",
+      "file:///tmp/x.html",
+      "ftp://example.com/x",
+    ]) {
+      expect(
+        decideContextMenuClick({
+          menuItemId: COMMENT_ON_PAGE_ID,
+          tab: { id: 42, url },
+        }),
+      ).toEqual({ action: "ignore" })
+    }
+  })
+
   test("ignores a different menu item", () => {
     expect(
       decideContextMenuClick({
