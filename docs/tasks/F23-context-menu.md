@@ -1,6 +1,6 @@
 # F23 — Context menu “Comment on this page”
 
-**Status:** deferred (P2)  
+**Status:** done  
 **PRD:** F23
 
 ## Behavior

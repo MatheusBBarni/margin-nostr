@@ -117,7 +117,7 @@ Left out of M0. Status is the task file; this table is not a queue.
 | `F19-njump-link.md` | P1 comment → njump/nevent | done |
 | `F20-relay-status.md` | P1 relay science (footer may show a minimal hint in M0 if data is free) | done |
 | `F22-keyboard.md` | P2 toggle panel / focus compose | done |
-| `F23-context-menu.md` | P2 “Comment on this page” | open |
+| `F23-context-menu.md` | P2 “Comment on this page” | done |
 | `M2-nip51-mute.md` | NIP-51 mute sync | open |
 | `M2-helper-relay.md` | Only if probe finds zero `#I` relays | open |
 | `open-domain-and-og.md` | Real domain, OG Worker | open |

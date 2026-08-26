@@ -10,7 +10,7 @@ export default defineConfig({
     name: "Margin",
     version: "0.1.0",
     description: "Follows-first comments on any URL",
-    permissions: ["storage", "tabs", "sidePanel"],
+    permissions: ["storage", "tabs", "sidePanel", "contextMenus"],
     host_permissions: ["wss://*/*", "https://*/*"],
     action: {
       default_title: "Margin",
