@@ -18,5 +18,6 @@ export function decideContextMenuClick(input: {
   tab?: { id?: number; url?: string }
 }): ContextMenuClickDecision {
   if (String(input.menuItemId) !== COMMENT_ON_PAGE_ID) return { action: "ignore" }
+  if (!input.tab?.url?.startsWith("https://")) return { action: "ignore" }
   return { action: "open", tabId: input.tab!.id! }
 }
