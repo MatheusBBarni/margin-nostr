@@ -1,9 +1,9 @@
-import { Avatar, Button, buttonVariants } from "@heroui/react"
+import { Avatar, Button, Link, buttonVariants } from "@heroui/react"
 import { commentViewerUrl, type ThreadNode } from "@margin/core"
 import { relativeTime } from "./relativeTime"
 import { renderText } from "./renderText"
 
-const openLinkClassName = `${buttonVariants({ size: "sm", variant: "tertiary" })} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus)]`
+const openLinkClassName = buttonVariants({ size: "sm", variant: "tertiary" })
 
 export type Profile = {
   name?: string
@@ -60,16 +60,16 @@ export function Comment({ node, profiles, self, onReply, onMute }: Props) {
               <ActionIcon d="M3 10h10a5 5 0 0 1 5 5v2M3 10l5-5M3 10l5 5" />
               Reply
             </Button>
-            <a
+            <Link
               aria-label="Open on njump"
               className={openLinkClassName}
               href={commentViewerUrl(comment)}
               rel="noopener"
               target="_blank"
             >
-              <ActionIcon d="M14 5h5v5M19 5l-7 7M10 5H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3" />
+              <ActionIcon d="M14 5h5v5M19 5l-7 7M10 5H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2-2v-3" />
               Open
-            </a>
+            </Link>
             {onMute && self !== comment.pubkey ? (
               <Button size="sm" variant="tertiary" onPress={() => onMute(comment.pubkey)}>
                 <ActionIcon d="M11 5 6 9H2v6h4l5 4zM22 9l-6 6M16 9l6 6" />
