@@ -10,6 +10,15 @@ describe("decideContextMenuClick", () => {
       }),
     ).toEqual({ action: "open", tabId: 42 })
   })
+
+  test("ignores a different menu item", () => {
+    expect(
+      decideContextMenuClick({
+        menuItemId: "other",
+        tab: { id: 42, url: "https://example.com/x" },
+      }),
+    ).toEqual({ action: "ignore" })
+  })
 })
 
 describe("commentOnPageMenu", () => {
