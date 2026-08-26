@@ -9,20 +9,9 @@ describe("commentViewerUrl", () => {
   test("is njump plus a nevent for this comment", () => {
     const url = commentViewerUrl({ id, pubkey })
     expect(url.startsWith("https://njump.me/")).toBe(true)
-    const encoded = url.slice("https://njump.me/".length)
-    const decoded = decode(encoded)
-    expect(decoded.type).toBe("nevent")
-    if (decoded.type !== "nevent") return
-    expect(decoded.data.id).toBe(id)
-    expect(decoded.data.author).toBe(pubkey)
-    expect(decoded.data.kind).toBe(1111)
-  })
-
-  test("encodes a nevent with no relays", () => {
-    const url = commentViewerUrl({ id, pubkey })
-    const decoded = decode(url.slice("https://njump.me/".length))
-    expect(decoded.type).toBe("nevent")
-    if (decoded.type !== "nevent") return
-    expect(decoded.data.relays ?? []).toEqual([])
+    expect(decode(url.slice("https://njump.me/".length))).toEqual({
+      type: "nevent",
+      data: { id, relays: [], author: pubkey, kind: 1111 },
+    })
   })
 })

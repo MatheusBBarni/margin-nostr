@@ -1,7 +1,9 @@
-import { Avatar, Button } from "@heroui/react"
+import { Avatar, Button, buttonVariants } from "@heroui/react"
 import { commentViewerUrl, type ThreadNode } from "@margin/core"
 import { relativeTime } from "./relativeTime"
 import { renderText } from "./renderText"
+
+const openLinkClassName = `${buttonVariants({ size: "sm", variant: "tertiary" })} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus)]`
 
 export type Profile = {
   name?: string
@@ -21,44 +23,10 @@ function displayName(pubkey: string, profile?: Profile): string {
   return profile?.display_name || profile?.name || `${pubkey.slice(0, 8)}…${pubkey.slice(-4)}`
 }
 
-function ReplyIcon() {
+function ActionIcon({ d }: { d: string }) {
   return (
     <svg aria-hidden="true" className="size-3.5" fill="none" viewBox="0 0 24 24">
-      <path
-        d="M3 10h10a5 5 0 0 1 5 5v2M3 10l5-5M3 10l5 5"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-      />
-    </svg>
-  )
-}
-
-function MuteIcon() {
-  return (
-    <svg aria-hidden="true" className="size-3.5" fill="none" viewBox="0 0 24 24">
-      <path
-        d="M11 5 6 9H2v6h4l5 4zM22 9l-6 6M16 9l6 6"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-      />
-    </svg>
-  )
-}
-
-function OpenIcon() {
-  return (
-    <svg aria-hidden="true" className="size-3.5" fill="none" viewBox="0 0 24 24">
-      <path
-        d="M14 5h5v5M19 5l-7 7M10 5H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-      />
+      <path d={d} stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
     </svg>
   )
 }
@@ -89,22 +57,22 @@ export function Comment({ node, profiles, self, onReply, onMute }: Props) {
           <div className="mt-1 whitespace-pre-wrap text-sm leading-6">{renderText(comment.content)}</div>
           <div className="mt-2 flex gap-1">
             <Button size="sm" variant="tertiary" onPress={() => onReply(comment.id)}>
-              <ReplyIcon />
+              <ActionIcon d="M3 10h10a5 5 0 0 1 5 5v2M3 10l5-5M3 10l5 5" />
               Reply
             </Button>
             <a
               aria-label="Open on njump"
-              className="button button--sm button--tertiary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus)]"
+              className={openLinkClassName}
               href={commentViewerUrl(comment)}
               rel="noopener"
               target="_blank"
             >
-              <OpenIcon />
+              <ActionIcon d="M14 5h5v5M19 5l-7 7M10 5H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3" />
               Open
             </a>
             {onMute && self !== comment.pubkey ? (
               <Button size="sm" variant="tertiary" onPress={() => onMute(comment.pubkey)}>
-                <MuteIcon />
+                <ActionIcon d="M11 5 6 9H2v6h4l5 4zM22 9l-6 6M16 9l6 6" />
                 Mute
               </Button>
             ) : null}
