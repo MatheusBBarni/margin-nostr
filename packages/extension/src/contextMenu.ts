@@ -1,5 +1,14 @@
 export const COMMENT_ON_PAGE_ID = "comment-on-this-page"
 
+export function commentOnPageMenu() {
+  return {
+    id: COMMENT_ON_PAGE_ID,
+    title: "Comment on this page",
+    contexts: ["page", "frame", "selection", "link", "editable", "image", "video", "audio"],
+    documentUrlPatterns: ["http://*/*", "https://*/*"],
+  }
+}
+
 export type ContextMenuClickDecision =
   | { action: "open"; tabId: number }
   | { action: "ignore" }
