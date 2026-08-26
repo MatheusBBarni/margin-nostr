@@ -28,6 +28,7 @@ import {
   FieldError,
   Input,
   Label,
+  Link,
   Radio,
   RadioGroup,
   TextField,
@@ -39,6 +40,8 @@ import { bytesToHex } from "nostr-tools/utils"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { chromeKv } from "./chromeKv"
 import { qrSvg } from "./qr"
+
+const PUBLIC_ORIGIN = import.meta.env.VITE_PUBLIC_ORIGIN ?? "http://localhost:5173"
 
 type FoundSigner = { extensionId: string; label: "nos2x" | "Alby" | "extension" }
 type Account =
@@ -476,6 +479,13 @@ export function Options() {
         <Button size="sm" variant="secondary" onPress={() => void addRelay()}>
           Add relay
         </Button>
+      </section>
+
+      <section>
+        <Link href={`${PUBLIC_ORIGIN}/privacy`} rel="noreferrer" target="_blank">
+          Privacy
+          <Link.Icon />
+        </Link>
       </section>
     </main>
   )

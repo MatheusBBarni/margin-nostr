@@ -26,6 +26,9 @@ export default defineConfig({
     browser_specific_settings: {
       gecko: {
         id: "margin@local",
+        data_collection_permissions: {
+          required: ["browsingActivity"],
+        },
       },
     },
   },
